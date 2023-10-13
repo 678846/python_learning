@@ -578,6 +578,7 @@ window.clearInterval(id1)
 12.2  document 对象
 
 ```javascript
+DOM 文档对象类型
 <div id="box">
     <p class="p1">张三</p>
 <p class="p2">李四</p>
@@ -662,11 +663,50 @@ function func4() {
 12.5 location 对象
 
 ```javascript
+<button onclick="fun1()">查看浏览器当前URL信息</button>
+<button onclick="fun2()">跳转其他页面</button>
+<button onclick="fun3()">刷新页面</button>
+<button onclick="fun4()">过一秒刷新页面</button>
+1.获取浏览器的URL信息
+console.log(location)
+2.获取协议
+console.log(location.protocol)
+3.ip
+console.log(location.host)
+4.端口
+console.log(location.port)
+5.路径
+console.log(location.pathname)
+6.锚点  -描点：超链接的一种，也叫命名锚点通过name定位 # 后面
+console.log(location.hash)
+7.地址栏参数  ？后面
+console.log(location.search)
+8. 完整地址
+console.log(location.href)
+
+function fun1() {
+    document.write(`${location}`)
+}
+
+function fun2() {
+    location.href = 'https://www.baidu.com/'
+    location.assign('https://www.jd.com')
+}
+
+function fun3() {
+    location.reload()
+}
+
+function fun4() {
+    setTimeout(fun3, 1000)
+}
+//每过一秒刷新页面
+window.onload = function() {
+    fun4()
+}
 ```
 
-
-
-12.5 案例 :浏览器页面获取实时时间    定时器+时间对象
+12.6 案例 :浏览器页面获取实时时间    定时器+时间对象
 
 ```javascript
 // 获取节点
@@ -707,7 +747,7 @@ function func() {
 var id = window.setInterval(func, 1000)
 ```
 
-12.6 清除修改内容
+12.7 清除修改内容
 
 ```javascript
 <button onclick="func1()">修改内容</button>
@@ -725,7 +765,7 @@ function func2() {
 }
 ```
 
-12.6  全选、不选、反选
+12. 8 全选、不选、反选
 
 ```javascript
 <style>  * {margin: 0px;padding: 0px;}
@@ -919,5 +959,363 @@ readyState 存有 XMLHttpRequest 的状态
     *
 4 readyState 变化是就会触发 onreadystatechange事件
 服务端状态码为4 客户端状态码为200 表示数据传输完成
+
+xhr.responseText 获取json格式的字符串
+xhr.responseHtml 获取xml
 ```
+
+## jQuery
+
+### label补充
+
+```javascript
+label为input输入框定义标注
+1.方式一
+	<label >用户名:<input type="text"></label>
+2.方式二
+    <label for = 'password'>密码:</label>
+    <input type="password" id="password">
+```
+
+### 1.jquery的引用
+
+```javascript
+jquery 是原生js的封装
+1.本地引入
+<script src='jquery路径'></script>
+2.外地引入
+    bootcdn 中文网开源项目
+    <script src='https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.js'></script>
+```
+
+### 2.jquery对象和dom对象的相互转化
+
+```
+jquery[索引] --> dom
+$(dom对象)   -->jquery 
+
+jquery对象和dom对象不能混用
+```
+
+### 3.jquery选择器
+
+```javascript
+1.语法：$() 得到的是 jquery对象
+	$('.id') $('#class_name') $('tag_name')
+2.组合选择器
+	$(.class_name,#id)
+3.层级选择器
+	$(tag_name #class_name)
+4.属性选择器
+	- 属性名选择 ['class_name']
+	- 属性名对应的属性值选择 ['class_name'=class_value]
+5.表单对象属性选择器
+	1.$(':checked') 找到input标签和select下拉选择标签中选择的标签
+    2.$(':selected') 找到select下拉框中选中的标签
+    3.$(':enable')	找到可操作的标签
+    4.$(':disable') 找打不可操作的标签
+6.表单选择器
+	针对input标签
+	1.$(':text')	找到所有type='text'的input标签
+	2.$(':radio')	找到所有type='radio'的input标签
+	...
+7.筛选器方法
+	1.父标签 parent()
+	2.子标签 children()
+	3.直系父辈 parents()
+	4.下一个兄弟标签	next()
+	5.下面所有兄弟标签	nextAll()
+	6.找上一个兄弟标签	prev()
+	7.找上面所有兄弟标签	prevAll()    [0]  表示的是上一个兄弟标签
+    8.找到不包含自己兄弟标签	Sibling()
+	9.找后代标签	find()
+	10.取第一个元素	first()  是jquery对象
+    11.去最后一个元素	last()	是jquery对象
+    12.通过索引jquery对象	 eq(索引值)
+	注意： jquery[0] 取的是dom对象，不是jquery对象				
+```
+
+### 4.文本内容
+
+```javascript
+1.dom对象
+    innerText 文本字符串
+    innerHTML 代标签的文本字符串
+2.jquery对象
+    text() 文本字符串
+    html() 带标签的文本字符串
+```
+
+### 5.类值操作
+
+```javascript
+1.addClass()	添加类值
+2.removeClass()	删除类值
+3.toggleClass()	如果有值则删除,没值则删除
+    -> 网站的闪烁操作
+setInterval(function(){$('.c1').toggleClass('.c2');},1000)
+css优先级
+1.后来者居上，相同级别，后面的覆盖前面的
+2.inline>id>class>tag>inherit
+3.!import 最nb
+```
+
+### 6.值操作
+
+```javascript
+获取用户输入的内容
+1.普通文本框	type='text'
+	$('input ..').vai()
+2.单选框	type='radio'
+	$('input:checked').val() 获取已选中的内容
+3.复选框	type='checkbox'
+	- $('input:checkbox:checked').val()		不能直接获取所有被勾选上的标签属性value对应的值、，只能获取一个
+	循环获取
+    	var checkbox = $('input:checkbox:checked')
+        - 方式一 
+        	for (i of checkbox){
+                return i.val()
+            }
+		- 方式二	each循环获取
+        	checkbox.each(function(k,v){
+                return k,v  //索引，值
+    		})
+设置值
+1.普通文本框 $('input ..').vai('xxx')
+2.单选框	$('input:checked').val(['1'])
+3.多选框	$('input:checkbox:checked').val(['1','3'])
+```
+
+### 7.创建标签实例
+
+```javascript
+<button id="zouni">添加标签</button>
+<div id="d1">
+    <h1>插入标签</h1>
+</div>
+
+1.绑定事件
+$('#zouni').click(function(){
+   	2.创建标签
+    var a =$('<a>',{
+        text: '跳转百度',        注意：'一定要添加text属性，要不然会啥也看不见，会很尴尬'
+        name:'这是一个a标签' ,
+        href:'http://www.baidu.com/',
+        id:'liu'})
+    3.找到插入标签的位置
+    var div = $('#d1')
+    4.插入标签
+    div.append(a);      //内部后面添加标签
+    // div[0].appendChild(a)    原生js方法
+})
+```
+
+### 8.文档操作
+
+```javascript
+<div id="d1">
+    <h1>亚洲</h1>
+</div>
+
+var div=$('#d1')
+1.标签外部的前面添加标签
+div.before('<h1>欧美</a>')
+2.标签外部后面添加标签
+div.after('<h1 >偷拍</h1>')
+3.标签内部前面添加标签
+div.prepend('<h1>日韩</a>')
+4.标签内部后面添加标签
+div.append('<h1>素人</a>')
+
+```
+
+### 9.清空和删除
+
+```javascript
+1.删除
+	$().remove()
+2.清空
+	$().empty()  相当于$().text=''
+```
+
+### 10.事件冒泡
+
+```javascript
+事件冒泡：有内到外触发
+当父元素和子元素都绑定了点击事件，点击了子元素，子元素和父元素都会触发点击事件
+    <style>
+        .c1{
+            height:200px;
+            background-color: red;
+
+        }
+        .c2{
+            height:100px;
+            width:100px;
+            background-color: green;
+        }
+    </style>
+
+$('.c1').click(function(){
+    alert('父元素');
+})
+$('.c2').click(function(){
+    alert('子元素')
+    return false; //阻止冒泡事件的发生
+})
+
+```
+
+### 11.绑定事件
+
+```javascript
+1.$().click(function(){})
+2.$().on('click',function(){})
+```
+
+### 12.克隆
+
+```javascript
+<button class="c1">弹弹弹</button>
+
+$('.c1').click(function(){
+    var btn = $(this).clone(true)   //clone 默认是不克隆事物的，true表示事件会被绑定上
+    $(this).after(btn)
+})
+```
+
+### 13.事件委托
+
+```javascript
+指的是把原本绑定在子元素的事件，委托给父元素，让父元素担当事件监听的职务
+
+<button class="add">保存</button>
+
+<label>姓名: <input type="text" id="username"></label>
+<label>爱好: <input type="text" id="hobby"></label>
+<label>年龄: <input type="text" id="age"></label>
+<table border="1">
+    <thead>
+        <tr><th>姓名</th><th>爱好</th><th>年龄</th><th>操作</th></tr>
+    </thead>
+    <tbody>
+        <tr><td>刘栋</td><td>美女</td><td>18</td><td><button class="del">删除</button></td></tr>
+        <tr><td>王五</td><td>赵六</td><td>17</td><td><button class="del">删除</button></td> </tr> </tbody>
+</table>
+
+
+var btn= $('.add')
+btn.click(function( ){
+    var name= $('#usernam').val()
+    var hobby= $('#hobby').val()
+    var age= $('#age').val()
+    var table=
+            `<tr><td>${name}</td><td>${hobby}</td><td>${age}</td><td><button class="del">删除</button></td></tr>`
+    $('tbody').append(table)
+})
+//删除  失败的写法 基于事件冒泡，事件委托必须依靠on进行绑定
+$('.del').click(function( ){
+    $(this).parent().parent().remove()
+})
+//事件委托的写法   上层标签对象.on('事件名称','委托人的选择器',function(){})
+$('tbody').on('click','.del',function(){
+    $(this).parent().parent().remove();
+})
+```
+
+### 14.属性操作
+
+```javascript
+1.prop 针对的是 checked enable disable selected 属性
+	- 查看 $().prop('checked')
+	- 设置 $().prop('checked','bool')
+2.attr
+	- 查看 $().attr('checked')
+	- 设置 $().attr(['xx':'00','hh':'gaga'])	
+```
+
+### 15.常用事件
+
+```javascript
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
