@@ -1003,12 +1003,12 @@ jquery对象和dom对象不能混用
 1.语法：$() 得到的是 jquery对象
 	$('.id') $('#class_name') $('tag_name')
 2.组合选择器
-	$(.class_name,#id)
+	$('.class_name,#id')
 3.层级选择器
-	$(tag_name #class_name)
+	$('tag_name #class_name')
 4.属性选择器
-	- 属性名选择 ['class_name']
-	- 属性名对应的属性值选择 ['class_name'=class_value]
+	- $()['attr']
+	- $() ['attr'='attr_value']
 5.表单对象属性选择器
 	1.$(':checked') 找到input标签和select下拉选择标签中选择的标签
     2.$(':selected') 找到select下拉框中选中的标签
@@ -1237,11 +1237,102 @@ $('tbody').on('click','.del',function(){
 ### 15.常用事件
 
 ```javascript
+<style>
+    .dd{background-color:red;height:200px;width:200px;}
+.xdd{background-color:green;height:200px;width:200px;}
+</style>
+
+<input type="text" id="uname">
+    <input type="text" id="xx">
+    <select name="hobby" id="hobby">
+        <option value="1">苍老师</option>
+        <option value="2">小泽老师</option>
+        <option value="3">柚子猫老师</option>
+	</select>
+<div class="dd"></div>
+<input type="text" id="Inp">
+
+
+1.focus 获取光标触发的事件
+    $('#uname').focus(function( ){
+    $(this).css({'background-color':'red'})
+    })
+2.blur 光标离开时触发的事件
+    $('#uname').blur(function( ){
+        $(this).css({'background-color':'yellow'})
+    })
+3.change 当域内的内容发生改变时触发的事件，input标签使用较少，一般用在select标签上
+    $('#xx').change(function(){
+        console.log($(this).val());
+    })
+    $('#hobby').change(function(){
+        //获取所有option对象
+        console.log(this.options);   
+        //获取选中的option索引位置
+        console.log(this.selectedIndex)  
+        console.log(this.options[this.selectedIndex])
+    })
+4.鼠标悬浮事件
+$('.dd').hover(
+    //鼠标进入时触发的事件   添加类属性
+    function(){
+        $(this).addClass('xdd');		或toggleClass()
+    },
+    //鼠标离开时触发的事件   移除类属性
+    function(){
+        $(this).removeClass('xdd');		或toggleClass()
+    }
+)
 ```
 
+### 16.页面加载
+
+```javascript
+<style>
+    .c1{
+        background-color:red;
+        height:200px;
+        width:200px;
+    }
+
+
+    .c2{
+        background-color:blue;
+        height:200px;
+        width:200px;
+    }
+</style>
+	
+<div class="c1"></div>
+<div class="c2"></div>
+<img src="https://img02.sogoucdn.com/app/a/100520093/caeba5a347c20618-9f007285b539607f-8db5b27ed80f5e4e001b02f1a896fa2d.jpg">
 
 
 
+
+1.最后执行，等待页面资源(html/css/视频/图片)加载完成后，存在覆盖现象，最后一个生效
+    /*window.onload=function(){
+        $('.c1').css({'background-color':'green'})
+    }
+    window.onload=function(){
+        $('.c2').css({'background-color':'green'})
+    }*/
+2.jquery ready()不存在覆盖现象
+$(document).ready(function(){
+    $('.c1').click(function(){
+        $(this).css({'background-color':'green'})
+    })
+})
+$(document).ready(function(){
+    $('.c2').click(function(){
+        $(this).css({'background-color':'green'})
+    })
+})
+```
+
+## Bootstrap
+
+### 
 
 
 
