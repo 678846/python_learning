@@ -1330,16 +1330,416 @@ $(document).ready(function(){
 })
 ```
 
-## Bootstrap
+### 其他：
 
-### 
-
-
-
-
+```
+bootstrap   和 fontawesome (饿了么开源的项目)
+```
 
 
 
+## Django
+
+### 1.web框架初识
+
+请求响应流程
+![image-20231015131255101](assets/image-20231015131255101.png)
+
+```javascript
+djang flask tornado(异步) flaskApi....
+
+浏览器先的到html框架，然后在向服务器请求js,css,picture等数据
+请求的url是	协议+域名+路径   https://127.0.0.1:8000/hh.js
+<script src='./hh.js'></script>
+
+基于ip找到唯一的一台计算机(服务器)，基于port找到对应的应用程序。
+
+```
+
+```python
+1.wsgi.py
+	封装的socket模块
+2.urls.py
+	存储的是路由和视图函数的对应关系
+3.views.py
+	视图函数，处理业务逻辑
+4.models.py
+	和数据库建立联系
+5.manage.py
+	管理文件 
+    sys.argv	执行py文件获取命令行的参数返回一个列表，第一个是py文件名,第二开始是参数。
+6.templates文件夹
+	存储的是html文件
+7.static文件
+	js、css、jpg...资源
+```
+
+**手撸web框架**
+
+1. *阶段一*
+
+```python
+wigi.py文件下
+import socket
+
+socket_serve = socket.socket()
+socket_serve.bind(('127.0.0.1', 8000))
+socket_serve.listen()
+
+while True:
+    conn, address = socket_serve.accept()
+    # 接受请求并打印
+    request = conn.recv(1024)
+    request = request.decode('utf-8')
+    print(request)
+
+    # 提取url路径
+    path = request.split(' ')[1]
+    print(path)
+    # 返回给浏览器响应行
+    conn.send(b'HTTP/1.1 200 ok\r\n\r\n')
+
+    if path == '/home':
+        with open('home.html', 'rb') as f:
+            data = f.read()
+        conn.send(data)
+        # 断开连接
+        conn.close()
+
+    if path == '/index':
+        with open('index.html', 'rb')as f:
+            data = f.read()
+        conn.send(data)
+        conn.close()
+    if path == '/login':
+        with open('login.html', 'rb')as f:
+            data = f.read()
+        conn.send(data)
+        conn.close()
+```
+
+```html
+home.html文件下
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>home</title>
+</head>
+<body>
+    <h1>home页面登录成功！</h1>
+    <img src="https://img04.sogoucdn.com/app/a/100520093/f9d5c084396d06f6-0c7006bf1d0bb8d5-f6caaf58ef4225eb2307614676de3c85.jpg" alt="mn">
+    <img src="http://img.mp.itc.cn/upload/20161228/0a37afba424f418f8f489b4ca4e9f394_th.jpg" alt="mn">
+    <img src="https://nimg.ws.126.net/?url=http%3A%2F%2Fdingyue.ws.126.net%2F2022%2F0703%2F288b0e1bj00reelni001sc000hs00hsg.jpg&thumbnail=660x2147483647&quality=80&type=jpg" alt="mn">
+</body>
+</html>
+
+
+login.html文件下
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>login</title>
+</head>
+<body>
+<h1>Login!登录成功</h1>
+<img src="https://nimg.ws.126.net/?url=http%3A%2F%2Fdingyue.ws.126.net%2F2022%2F0114%2Fa9e68e36j00r5oheq001fc000hs00qog.jpg&thumbnail=650x2147483647&quality=80&type=jpg" alt="hh">
+</body>
+</html>
+
+
+index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>index</title>
+</head>
+<body>
+<h1>index!</h1>
+<img src="https://nimg.ws.126.net/?url=http%3A%2F%2Fdingyue.ws.126.net%2F2023%2F0510%2F12be05d7j00rug7vv003zd000xc01com.jpg&thumbnail=660x2147483647&quality=80&type=jpg">
+<img src="https://nimg.ws.126.net/?url=http%3A%2F%2Fdingyue.ws.126.net%2F2023%2F0330%2Fd228cf4aj00rsbeex001jc000hs00uwg.jpg&thumbnail=660x2147483647&quality=80&type=jpg">
+</body>
+</html>
+```
+
+2. *阶段二 优化wsgi.py文件*
+
+```python
+#减少if判断
+import socket
+
+socket_serve = socket.socket()
+socket_serve.bind(('127.0.0.1', 8000))
+socket_serve.listen()
+#绑定路径和资源对应关系
+urlpatterns = [('/home', 'home.html'), ('/login', 'login.html'), ('/index', 'index.html')]
+while True:
+    conn, address = socket_serve.accept()
+    # 接受请求并打印
+    request = conn.recv(1024)
+    request = request.decode('utf-8')
+    print(request)
+
+    # 提取url路径
+    path = request.split(' ')[1]
+    print(path)
+    # 返回给浏览器响应行
+    conn.send(b'HTTP/1.1 200 ok\r\n\r\n')
+    for item in urlpatterns:
+        if path == item[0]:
+            with open(item[1], 'rb') as f:
+                data = f.read()
+            # 返回给浏览器数据，退出循环
+            conn.send(data)
+            conn.close()
+            break;
+```
+
+3. *阶段三封装函数*
+
+```python
+import socket
+import threading
+
+
+def home(conn):
+    with open('home.html', 'rb') as f:
+        data = f.read()
+    conn.send(data)
+    conn.close()
+
+
+def login(conn):
+    with open('login.html', 'rb') as f:
+        data = f.read()
+    conn.send(data)
+    conn.close()
+
+
+def index(conn):
+    with open('index.html', 'rb') as f:
+        data = f.read()
+    conn.send(data)
+    conn.close()
+
+
+socket_serve = socket.socket()
+socket_serve.bind(('127.0.0.1', 8000))
+socket_serve.listen()
+urlpatterns = [('/home', home), ('/login', login), ('/index', index)]
+
+while True:
+    conn, address = socket_serve.accept()
+    # 接受请求并打印
+    request = conn.recv(1024)
+    request = request.decode('utf-8')
+    print(request)
+
+    # 提取url路径
+    path = request.split(' ')[1]
+    print(path)
+    # 返回给浏览器响应行
+    conn.send(b'HTTP/1.1 200 ok\r\n\r\n')
+    for item in urlpatterns:
+        if path == item[0]:
+            # 开启多线程
+            t = threading.Thread(target=item[1], args=(conn,))
+            t.start()
+            # item[1](conn)
+
+```
+
+4. 阶段四 *连接数据库*
+
+```python
+import pymysql
+
+
+def con_mysql():
+    # 创建连接对象
+    conn = pymysql.Connect(
+        host='127.0.0.1',
+        port='3306',
+        user='root',
+        password='678846',
+        database='liu',
+        charset='utf8'
+    )
+    # 创建游标对象
+    cursor = conn.cursor()
+    sql = 'show tables;'
+    # 执行sql语句
+    res = cursor.execute(sql)
+    #提交事物
+    conn.commit()
+    conn.close()
+```
+
+5. 阶段五综合设置manage.py文件启动*
+
+```python
+wsgi.py
+import socket
+import threading
+from urls import urlpatterns
+
+
+def run():
+    socket_serve = socket.socket()
+    socket_serve.bind(('127.0.0.1', 8000))
+    socket_serve.listen()
+
+    while True:
+        conn, address = socket_serve.accept()
+        # 接受请求并打印
+        request = conn.recv(1024)
+        request = request.decode('utf-8')
+        print(request)
+
+        # 提取url路径
+        path = request.split(' ')[1]
+        print(path)
+        # 返回给浏览器响应行
+        conn.send(b'HTTP/1.1 200 ok\r\n\r\n')
+        for item in urlpatterns:
+            if path == item[0]:
+                # 开启多线程
+                t = threading.Thread(target=item[1], args=(conn,))
+                t.start()
+                # item[1](conn)
+
+```
+
+```python
+urls.py
+import views
+urlpatterns = [('/home', views.home),
+               ('/login', views.login),
+               ('/index', views.index)
+            ]
+```
+
+```python
+models.py
+import pymysql
+
+def create_models():
+    conn=pymysql.Connect(
+        host='localhost',
+        port=3306,
+        user='root',
+        password='',
+        database='learning',
+        charset='utf8'
+    )
+    cursor=conn.cursor()
+    sql='create table useinfo ( id int primary key auto_increment,name char(10) not null,age int unsigned );'
+    cursor.execute(sql)
+    conn.commit()
+    conn.close()
+```
+
+```python
+views.py
+
+def home(conn):
+    with open('templates/home.html', 'rb') as f:
+        data = f.read()
+    conn.send(data)
+    conn.close()
+
+
+def login(conn):
+    with open('templates/login.html', 'rb') as f:
+        data = f.read()
+    conn.send(data)
+    conn.close()
+
+
+def index(conn):
+    with open('templates/index.html', 'rb') as f:
+        data = f.read()
+    conn.send(data)
+    conn.close()
+
+```
+
+```python
+manage.py
+import sys
+from wsgi import run
+from models import create_models
+
+# 执行py文件时，可以通过sys.argv返回一个列表 [py文件名,*args]
+command = sys.argv
+line = command[1]
+if line == 'runserver':
+    run()
+elif line == 'migrate':
+    create_models()
+```
+
+template文件下存放的是html模版
+
+```html
+homr.html
+login.html
+index.html
+```
+
+static 文件夹下存放的是静态资源 css js picture等
+
+特别浏览器会请求一个小图标默认路径是 href='favicon.icon'
+
+设置 <link  rel='icon' href='xx.icon'>
+
+**步骤**
+
+```
+1.运行项目
+2.接受请求，wsgi~模块
+	- 接受请求，将请求信息封装成一个字典传递给application函数，并调用application函数。
+	- application函数会根据路径找到对应的视图函数，并获取视图函数的返回值
+	- application函数的返回值是一个列表，列表中封装的都是视图函数的返回值
+	- wsgi~模块会将application的返回值通过socket传递给浏览器
+```
+
+
+
+### 2.Http协议和Django初始
+
+```html
+http : 超文本传输协议  超文本（带有链接的文本数据）
+url 统一资源定位符
+请求和响应的步骤
+	在浏览器输入url，按下回车后的步骤
+	- 1.浏览器会向DNS服务器请求解析url中域名对应的ip地址
+	- 2.浏览器根据IP地址和默认端口号80 找到服务器并建立连接
+	- 3.浏览器发出读取文件的请求
+	- 4.服务端做出响应，返回对应的html文件
+	- 5.断开连接
+	- 6.浏览器加载渲染html并显示内容
+
+http 三次握手和四次挥手
+```
+
+ 请求消息格式
+
+![image-20231015220224444](assets/image-20231015220224444.png)
+
+```python
+	- 首行	method+url(路径)+https版本号
+    - 请求头   多组参数(key-value)组成
+    - 空行	/r/n/r/n  标志请求头结束
+    - 请求体	  url请求参数 get为空  post参数全在body中
+    
+    get和post请求的区别
+    	1.浏览器网址输入的都是get请求，form表单输入的内容是post请求
+        2.get的参数在url中参数有长度限制，post的参数在请求体参数无长度限制
+        3.post相对安全一点
+```
 
 
 
@@ -1371,6 +1771,22 @@ $(document).ready(function(){
 
 
 
+
+
+前端(客户端)向后端(服务端)发出请求(request),后端响应(response)请求
+1.request
+
+​    2.response
+	- 首行	http版本号+状态码+状态码描述
+    - header  多组参数(key-value)组成
+    - 空行	/r/n/r/n  标志请求头结束
+    - body	  响应体（数据）
+    状态码:
+    1xx 	服务器收到请求
+    2xx 	请求成功
+    3xx 	重定向
+    4xx		客户端发生错误
+    5xx 	服务端发生错误
 
 
 
