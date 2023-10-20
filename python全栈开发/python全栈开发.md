@@ -8,7 +8,7 @@
 //第二种
 <script src='文件路径'></script>
 //第三种
-<div inclick='alert(11)'>点我</div>
+<div onclick='alert(11)'>点我</div>
 //第四种
 <a href="文件路径">点我</a>
 ```
@@ -1691,7 +1691,7 @@ index.html
 
 static 文件夹下存放的是静态资源 css js picture等
 
-特别浏览器会请求一个小图标默认路径是 href='favicon.icon'
+**特别浏览器会请求一个小图标默认路径是 href='favicon.icon'**
 
 设置 <link  rel='icon' href='xx.icon'>
 
@@ -1712,7 +1712,7 @@ static 文件夹下存放的是静态资源 css js picture等
 
 ```html
 http : 超文本传输协议  超文本（带有链接的文本数据）
-url 统一资源定位符
+url 统一资源定位符		协议+域名+路径+？请求参数
 请求和响应的步骤
 	在浏览器输入url，按下回车后的步骤
 	- 1.浏览器会向DNS服务器请求解析url中域名对应的ip地址
@@ -1741,88 +1741,719 @@ http 三次握手和四次挥手
         3.post相对安全一点
 ```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-前端(客户端)向后端(服务端)发出请求(request),后端响应(response)请求
-1.request
-
-​    2.response
-	- 首行	http版本号+状态码+状态码描述
-    - header  多组参数(key-value)组成
-    - 空行	/r/n/r/n  标志请求头结束
-    - body	  响应体（数据）
-    状态码:
-    1xx 	服务器收到请求
-    2xx 	请求成功
-    3xx 	重定向
-    4xx		客户端发生错误
-    5xx 	服务端发生错误
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+响应消息格式
+
+![image-20231016081937207](assets/image-20231016081937207.png)
+
+network内容
+```python
+General部分
+
+Request URL: http://127.0.0.1:8080/   请求地址
+Request Method: GET   请求方法
+Status Code: 200 OK   响应状态码和描述
+Remote Address: 127.0.0.1:8080    客户端的地址(ip+port)
+        
+request headers 请求头部键值对信息
+response headers  响应头部键值对信息
+```
+
+状态码
+```python
+1xx 	服务器收到请求
+2xx 	请求成功
+3xx 	重定向
+4xx		客户端发生错误
+5xx 	服务端发生错
+```
+
+MVC就是把Web应用分为模型(M)，控制器(C)和视图(V)三层
+![image-20231016085839379](assets/image-20231016085839379.png)
+
+django是MTV模式,其实就是从MVC模式加工过来的.
+```python
+M 代表模型（Model）： 负责业务对象和数据库的关系映射(ORM)。
+T 代表模板 (Template)：负责如何把页面展示给用户(html)。  模板渲染功能
+V 代表视图（View）：   负责业务逻辑，并在适当时候调用Model和Template。
+
++ url控制器   urls.py文件:  路径和视图函数的映射关系
+```
+
+django下setting.py
+```python
+#注册app
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'app01.apps.App01Config'
+    # 'app01'
+]
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        # 'DIRS': os.path.join(BASE_DIR , 'templates'),
+        'DIRS': [BASE_DIR , 'templates'],  #注意这个配置
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+BASE_DIR = Path(__file__).resolve().parent.parent #BASE_DIR就是当前目录下
+__file__:当前文件的绝对路径
+os.path.dirname():找父级目录
+```
+
+案例用户登录：
+```python
+# 1 get请求回复登录页面
+# 2 用户输入用户名和密码提交post请求到后台
+# 3 后台将用户提交过来的数据取出,并判断用户名和密码是否正确,  username='root'  password='123'
+# 4 用户名密码都是对的,回复一个新的html页面,  失败了,回复一个含有404字符串的页面
+
+urls.py
+    from django.urls import path
+    from app01 import views
+    urlpatterns = [
+        path('home/', views.home),
+    ]
+    
+views.py
+	from django.http import HttpResponse
+from django.shortcuts import render
+
+
+def home(request):
+    if request.method == 'GET':
+        return render(request, 'home.html')
+    elif request.method == 'POST':
+        data = request.POST
+        name = data.get('name')
+        password = data.get('password')
+        if name == 'root' and password == '123':
+            return render(request, 'login.html')
+        else:
+            return HttpResponse('404')
+templates文件下
+	login.html	home.html
+```
+
+
+
+### 3.django的url
+
+```python
+虚拟环境：相互独立，相互隔离，同一个系统解释器，运行不同版本的包
+#创建虚拟环境
+virtualenv xx  --python python=3.8
+#激活虚拟环境
+cd ./xx/Scripts
+activate
+#退出虚拟环境
+deactivate
+```
+
+```python
+url注意的点	
+    1.url(r'^index/', views.index),     路径的前置导航斜杠(对应根路径那个),不需要写,django自动加上
+    2.http://127.0.0.1:8000/index 当我们访问django的url路径时,如果请求路径最后没有写/,那么django会发一个重定向的响应,告	  诉浏览器,加上/再来访问我
+    settigns.py配置文件中修改:
+        默认为True, 当值为True时,django需要请求路径后面加上斜杠,如果请求没有加,那么响应301重定向,让浏览器街上斜杠重新请			求
+        APPEND_SLASH = True  
+        值为False,就关闭了django的这个功能
+        APPEND_SLASH = False        
+	路由捕获成功了就不会继续循环了(for i in urlpatterns:...break)
+    url(r'^index/$', views.index),  
+    url(r'^index/xx/xx/', views.index2),  
+    注意: 路径写正则时,要注意最好精确匹配,尾部加上$,或者写正则时,尽量不要路径差不多    
+
+    url(r'^$', views.home),  #匹配根路径的写法  
+```
+
+```python
+url的分组
+	1.无名分组 (位置传参)
+    	url(r'^books/(\d+)/(\d+)/', views.books) 
+        视图函数写法:
+        def books(request, y, m):
+        print(y, m)  
+        return HttpResponse('%s-%s所有书籍都在这儿,你随意看' % (y, m))    
+    2.有名分组(函数参数必须和有名分组名称相同)
+	url(r'^books/(?P<year>\d+)/(?P<month>\d+)/', views.books2)
+    def books2(request,  month, year):
+        print(year, month) 
+        return HttpResponse('%s--%s所有书籍都在这儿,你随意看' % (year,month ))
+```
+
+```python
+url的反向解析
+
+```
+
+```python
+request对象
+http://127.0.0.1:8000/home/12/123?a=1&b=2
+request	<WSGIRequest: GET '/home/12/123?a=1&b=2'>
+	1.method	GET
+    2.POST
+    3.GET	<QueryDict: {'a': ['1'], 'b': ['2']}>
+    4.path 	/home/12/123
+    5.get_full_path()	/home/12/123?a=1&b=2
+    6.META	请求的所有信息
+postman 发送post请求
+	post 	<QueryDict: {}>
+```
+
+```python
+响应方法
+1.HttpResponse 	返回字符串
+2.render	返回响应页面
+3.redirect	重定向
+4.JsonResponse	返回json格式字符串
+```
+
+```python
+设置响应头和状态码
+response=HttpResponse('hh')
+设置响应头
+response['name']='liudong'
+设置状态码
+response.status_code=404
+```
+
+```python
+CBV和FBV
+FBV:函数形式编写的视图
+CBV:类形式编写的视图
+
+urls.py
+	urlpatterns = [
+    path('home/', views.HomeView.as_view()),
+]
+    
+views.py
+	class HomeView(View):
+    # 通过反射机制获取类中定义的请求方法
+    def get(self, request, *args, **kwargs):
+        print(request.GET)
+        return HttpResponse('ok')
+
+ base.py(源码部分)
+	http_method_names = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace']
+	 def as_view(cls, **initkwargs):
+        def view(request, *args, **kwargs):
+            self = cls(**initkwargs)
+            self.setup(request, *args, **kwargs)
+            if not hasattr(self, 'request'):
+                raise AttributeError(
+                    "%s instance has no 'request' attribute. Did you override "
+                    "setup() and forget to call super()?" % cls.__name__
+                )
+            return self.dispatch(request, *args, **kwargs)
+        return view
+    是一个闭包函数，返回了view函数，view函数又调用了dispatch()
+    def dispatch(self, request, *args, **kwargs):
+        if request.method.lower() in self.http_method_names:
+            handler = getattr(self, request.method.lower(), self.http_method_not_allowed)
+        else:
+            handler = self.http_method_not_allowed
+            return handler(request, *args, **kwargs)
+	通过反射机制在定义类中找到对应的请求方法，没有就报错
+反射机制：通过字符找到对应的属性和方法
+```
+
+```python
+dispatch 用法和装饰器  在执行请求方法之前做一些操作
+
+1.重写父类dispatch()
+    def dispatch(self, request, *args, **kwargs):
+        print('执行方法之前')
+        ret = super().dispatch(request, *args, **kwargs)
+        print('执行方法之后')
+        return ret
+2.写装饰器
+	from django.utils.decorators import method_decorator
+	def outer(func):
+        def inner(*args, **kwargs):
+            print('我是装饰器')
+            ret = func(*args, **kwargs)
+            print('我是装饰器')
+            return ret
+        return inner
+
+	方式一：请求方法前加装饰器
+		@method_decorator(outer)
+        def get(self, request, *args, **kwargs):
+            print(request.GET)
+            return HttpResponse('ok')
+	方式二：dispatch()方法前加装饰器
+    	@method_decorator(outer)
+        def dispatch(self, request, *args, **kwargs):
+            ret = super().dispatch(request, *args, **kwargs)
+            return ret
+	方式三：类前面加装饰器
+    	@method_decorator(outer,naem='get')
+		class HomeView(View):
+```
+
+### 4.模版渲染
+
+```python
+views.py
+    from django.shortcuts import render
+	import datetime.datetime
+    def home(request):
+        1.字符串
+        string = 'i love python'
+        2.数字
+        number = 123
+        3.列表
+        li = [1, 2, 3, 4]
+        4.字典
+        dic = {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+	   5.函数   调用函数不用(),所以不能用有参数的函数
+        def function():
+            return '我是函数'
+		
+        class Class_name(object):
+            def __init__(self):
+                self.name = '类'
+                self.data = '2023'
+		6.类对象
+        c = Class_name()
+        #封装成字典
+        date = datetime.now()
+    	tag= '<a href="http://www.baidu.com">百度<a/>'
+        data={
+            'string':string,
+            'number':number,
+            'li':li,
+            'dic':dic,
+            'function':function,
+            'c':c,
+        }
+        #模板渲染完之后，才返回给浏览器
+        return render(request,'home.html',data)
+
+    
+home.html
+	字符串{{ string }}
+    数字{{ number }}
+    <ul>
+    列表{% for i in li %}
+        <li>{{ i }}</li>
+        {% endfor %}
+    </ul>
+    <ul>
+    字典{% for k,v in dic.items %}
+        <li>{{ k }}--{{ v }}</li>
+        {% endfor %}
+    </ul>
+    <p>{{ function }}</p>
+    <p>{{ c.name }}:{{ c.data }}</p>   
+```
+
+![image-20231018201150438](assets/image-20231018201150438.png)
+
+
+
+```python
+过滤器：对数据进行加工
+语法：
+	- 无参数过滤器 {{变量名|过滤器名称}}
+    - 有参数过滤器 {{变量名|过滤器名称:'参数'}}	
+    
+    
+django 自带过滤器
+	1.length	返回长度
+    2.default	为空或False设置默认值
+    3.slice		切片
+    4.date		格式化{{time|data:'Y-m-d H:i:s'}}
+   	5.safe		xss攻击：跨站脚本攻击 标记为标签
+    			a_tag = '<a href="http://www.baidu.com">百度<a/>'
+				<h2>{{ a_tag|safe }}</h2>
+   6.cut 		移除指定字符串
+   7.join		拼接字符串
+```
+
+![image-20231018203717244](assets/image-20231018203717244.png)
+![image-20231018203821541](assets/image-20231018203821541.png)
+
+```python
+1.forloop		对象：记录循环次数
+{% for i in li %}
+        <li>{{ forloop.counter }}---{{ i }}</li> 从1开始计数
+        <li>{{ forloop.counter0 }}---{{ i }}</li> 从0开始计数
+        <li>{{ forloop.revcounter }}---{{ i }}</li> 倒序,从1开始计数
+        <li>{{ forloop.revcounter0 }}---{{ i }}</li> 倒序,从0开始计数
+        <li>{{ forloop.first }}---{{ i }}</li> 如果是第一次循环,就得到True
+        <li>{{ forloop.last }}---{{ i }} </li>  如果是最后一次循环,就得到True,其他为False
+{% endfor %}
+
+2.reversed	倒序循环
+
+<ul>
+    {% for i in hobby reversed %}
+        <li>{{ i }} </li>
+    {% endfor %}
+</ul>
+
+3.if 标签
+{% if age > 18 %}
+    <h1>太老了</h1>
+{% elif age == 18 %}
+    <h1>还行</h1>
+{% else %}
+    <h1>挺嫩</h1>
+{% endif %}
+
+{% if age > 18 or number > 100 %} <!-- 符号两边必须有空格 -->
+    <h1>太老了</h1>
+{% elif age == 18 %}
+    <h1>还行</h1>
+{% else %}
+    <h1>挺嫩</h1>
+{% endif %}
+
+{% if hobby|length > 3 %} <!-- 可以配合过滤器来使用 -->
+    <h1>爱好还挺多</h1>
+{% else %}
+    <h1>爱好不够多</h1>
+{% endif %}
+
+4.with	起别名
+{% with string as s %}
+        <li>{{ s}}</li>
+    {% endwith %}
+   
+
+5.csrf_token验证
+<form action="" method="post">
+    {% csrf_token %}  <!-- 加上这个标签之后,post请求就能通过django的csrf认证机制,就不需要注释settings的配置了 -->
+    <input type="text" name="uname">
+
+    <input type="submit">
+</form>
+
+```
+
+**Django模板中属性的优先级大于方法**
+
+```python
+d2 = {'items': [11,22,33]}
+优先使用items属性,不使用items方法,容易导致错误
+
+<ul>
+
+    {% for key,v in d2.items %}
+        <li>{{ key }} -- {{ v }}</li>
+    {% endfor %}
+</ul>
+```
+
+```python
+模板继承
+	1.先创建一个母版
+    2.在母板中预留block块(钩子)
+    	{% block body %}
+       	 <h1>母板</h1>
+    	{% endblock %}
+    3.继承母板
+    	{%extends 'path'%}
+    4.重写母板并继承中block块
+    	{% block body %}
+        {{block.super}}
+            <...>
+        {% endblock%}
+     
+   其他位置的block块
+	{%block css%}
+    {%endblock%}
+    {%block js%}
+    {%endblock%}
+```
+
+ 
+
+```python
+组件：一个完整功能的模块，其他页面要使用，以组件形式引入
+{% include 'zujian.html' %}
+```
+
+
+
+```python
+静态文件配置流程：
+	1.setting.py
+		#别名，映射到静态文件的路径，引入时使用别名
+		STATIC_URL = '/static/'
+        #静态文件的路径，修改不会影响别名的使用
+		STATICFILES_DIRS = [
+    	os.path.join(BASE_DIR, 'statics'),
+				]
+	2.在项目目录下创建一个文件夹statics
+    3.在html引入
+    	引入方式一：
+        	<link rel="stylesheet" href="/static/css/xx.css">  使用别名路径引入
+         引入方式二：
+        	{%load static %}
+            <link rel="stylesheet" href="{%static 'css/xx.css' %}"> 
+```
+
+
+
+```python
+自定义过滤器
+1.在应用文件夹下创建一个templatetags文件夹
+2.templatetags文件下创建py文件
+3.在py文件下编写
+my_tag.py文件下
+	from django import template
+    # 定义一个注册器
+    register = template.Library()
+    # 自定义过滤器最多有俩个参数，第一个参数是管道前的数
+    @register.filter
+    def together(x, y):
+        return x + y
+home.html文件下
+	{{ string|together:' liud' }}
+    
+    
+自定义标签
+my_tag.py
+	# 自定标签，没有参数限制
+    @register.simple_tag
+    def tag(x1, y1, x2, y2):
+        return x1 + y1 + x2 + y2
+home.html
+	<p>{% tag 'liu' 'dong' '18' 'h'%}</p>
+    
+    
+自定义动态组件
+数据的流向：视图函数-->html模版-->inclusion_tag函数-->小段html-->html模版
+my_tag.py
+	# 动态组件 需要传入一个参数,这个参数就是一个html文件(你想做成动态组件的html文件)
+    @register.inclusion_tag('zujian.html')
+    def zujian(xx):  # 参数没有个数限制
+        data = xx
+        return {'data': data}
+    # zujian.html会收到定义的inclusion_tag函数的返回值,然后进行zujian2.html这个动态组件的模板渲染
+home.html
+	{% zujian li%}
+zujian.html
+	<ul>
+        {% for item in data %}
+        <li>{{ item }}</li>
+        {% endfor %}
+    </ul>
+```
+
+![image-20231019193515951](assets/image-20231019193515951.png)
+
+
+
+
+### 5.orm
+
+```python
+orm:关系对象模型 
+orm->sql->pymysql->mysqld->磁盘
+类-表 对象-数据
+创建模型类
+    # 属性对应的字段,默认都是不能为空的,也就是加了not null约束
+    class Book(models.Model):
+
+        # 如果没有指定主键字段,默认orm会给这个表添加一个名称为id的主键自增字段
+        # 如果制定了,以指定的为准,那么orm不在创建那个id字段了
+        # nid = models.AutoField(primary_key=True)  #int primary_key auto_increment,
+        title = models.CharField(max_length=32)  #varchar 书籍名称
+        # price = models.FloatField()  #
+        price = models.DecimalField(max_digits=5, decimal_places=2)  # 999.99 价格
+        pub_date = models.DateField()  # date  出版日期
+        publish = models.CharField(max_length=32)  #出版社名称
+        # xx = models.CharField(max_length=18, null=True, blank=True)  # null=True,blank=True允许该字段数据为空
+        # xx = models.CharField(max_length=18, default='xxx')  # null=True,blank=True允许该字段数据为空
+
+    Book生成的表名称为 应用名称_模型类名小写
+
+数据库同步指令
+	python manage.py makemigrations
+	python manage.py migrate
+生成的有个django_migrations表记录的是migrations文件夹下那些文件被执行了，执行migrate会先检测这张表那些文件执行了，如果执行了就不在执行了。
+```
+
+
+
+```python
+django配置连接mysql
+1.创建数据库
+	create database orm1 charset utf8;
+2.setting.py配置
+	DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'learning',
+        'HOST':'127.0.0.1',
+        'PORT':3306,
+        'USER':'root',
+        'PASSWORD':'',  #有密码的填密码
+        
+        }
+    }
+3.安装pymysql
+	pip install pymysql -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com
+4.在项目主目录下
+	import pymysql
+    pymysql.install_as_MySQLdb()
+5.执行数据库同步指令
+	只要换了数据库就会在执行一边(默认db.sqlite3)
+```
+
+![image-20231019203249868](assets/image-20231019203249868.png)
+
+
+
+
+```python
+记录的增删改查
+
+增加
+	1.实例化模型类
+    	from app01 import models
+        from django.shortcuts import HttpResponse
+        def home(request):
+            new_book = models.Book(
+                title='python入门到放弃',
+                price=20,
+                # datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+                pub_date='2023-10-10',
+                publish='夕阳红出版社'
+            )
+            new_book.save()
+
+            return HttpResponse('ok')
+        主键，有默认值或者可以为空的，可以不用传值
+    2.create()方法，返回的是新添加的模型类对象
+    	models.Book.objects.create(
+        title='Python面向监狱编程',
+        price=20,
+        pub_date='2023-10-10',
+        publish='洛杉矶出版社'
+    	)
+    3.批量添加 bulk_create()
+        obj_list=[]
+        for i in range(1,10):
+            book_obj=models.Book(
+                title=f'白鹿原{i}',
+                price=20,
+                pub_date=f'2023-10-{i}',
+                publish='家里蹲出版社'
+            )
+            obj_list.append(book_obj)
+        models.Book.objects.bulk_create(obj_list)
+
+```
+
+![image-20231019214807638](assets/image-20231019214807638.png)
+
+
+
+```python
+查询
+book_objs = models.Book.objects.all()  # queryset 类似于列表
+print(book_objs)
+book_objs = models.Book.objects.filter(id=3)  # 条件查询 结果为queryset类型数据
+print(book_objs)
+book_objs=models.Book.objects.filter()  # filter没有加条件,和all一样的效果
+print(book_objs)
+book_objs=models.Book.objects.filter(id=100)  # 查不到数据,不会保存,返回空干的queryset类型数据
+print(book_objs)
+book_objs = models.Book.objects.get(id=3)  # 条件查找 结果为: 模型类对象
+print(book_objs)
+# models.Book.objects.get()  # 也是查所有但是get方法的查询结果有要求, 有且只能有一条
+# models.Book.objects.get(id=100)  # 查询不到，查询多条都会报错
+```
+
+![image-20231019215349656](assets/image-20231019215349656.png)
+
+
+
+```python
+删除
+# queryset类型数据可以调用delete方法删除查询结果数据
+models.Book.objects.filter(id=3).delete()
+# 模型类对象也可以调用delete方法删除数据
+models.Book.objects.get(id=4).delete()
+```
+
+![image-20231019215700102](assets/image-20231019215700102.png)
+
+
+```python
+修改
+	# 修改方式1  通过queryset类型数据修改
+    models.Book.objects.filter(id=6).update(
+        price=20,
+        title='红浪漫',
+    )
+    # 报错:模型类对象不能调用update方法
+    # models.Book.objects.get(id=5).update(
+    #     price=30,
+    # )
+    # 修改方式2  通过模型类对象来修改
+    ret = models.Book.objects.get(id=5)
+    ret.price = 30
+    ret.title = '少年阿宾00'
+    ret.save()
+```
+
+![image-20231019220117787](assets/image-20231019220117787.png)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+​		
