@@ -1,6 +1,6 @@
-## JavaScript
+# JavaScript
 
-### 1. js的四种引入方式
+## 1. js的四种引入方式
 
 ```javascript
 //第一种
@@ -13,9 +13,9 @@
 <a href="文件路径">点我</a>
 ```
 
-### 2. 变量  var :划分当前变量的作用域
+## 2. 变量  var :划分当前变量的作用域
 
-### 3.  数据类型
+## 3.  数据类型
 
 3.1 基本数据类型
 
@@ -64,7 +64,7 @@ object(Array function Date ...)
 2. 与 NaN 比较除了NaN !=NaN 为ture ；其余都是false
 ```
 
-### 4. 类型的强制转换
+## 4. 类型的强制转换
 
 ```javascript
 parseInt 	强制转换为整形  100abc->100
@@ -88,7 +88,7 @@ Boolean		7种为false
 	
 ```
 
-### 5. 运算符
+## 5. 运算符
 
 ```javascript
 与python大致一样 ++ --
@@ -109,7 +109,7 @@ Boolean		7种为false
            
 ```
 
-### 6. 流程控制
+## 6. 流程控制
 
 6.1 分支结构
 
@@ -206,7 +206,7 @@ for (var i of obj) {
 
 
 
-### 7. 函数
+## 7. 函数
 
 7.1 函数创建方式
 
@@ -314,7 +314,7 @@ function fun2() {
 //js 有预加载机制：提前把函数加载到内存中，然后代码整体运行   匿名函数没有预加载，先定义后加载
 ```
 
-### 8. js 对象
+## 8. js 对象
 
 ```javascript
 //第一种创建对象
@@ -395,7 +395,7 @@ console.log(res2, typeof (res2))
 
 ```
 
-### 9. 字符串对象函数
+## 9. 字符串对象函数
 
 ```javascript
   var str = 'to be or not be'
@@ -428,7 +428,7 @@ console.log(res2, typeof (res2))
     console.log("to be or not to be".replace(/to/g,"two"))
 ```
 
-### 10. 数组对象相关方法
+## 10. 数组对象相关方法
 
 ```javascript
 //定义一个数组
@@ -490,7 +490,7 @@ console.log(arr7.slice(-2,-1),'slice')
 
 ```
 
-### 11. 数学相关函数
+## 11. 数学相关函数
 
 ```javascript
 //四舍五入 round
@@ -525,7 +525,7 @@ function randomint(n, m) {
     return Math.ceil(Math.random() * (m - n + 1))}
 ```
 
-### 12. BOM对象
+### 12. BO2M对象
 
 12.1 window对象
 
@@ -818,7 +818,7 @@ function fun3() {
 }
 ```
 
-### 13. js 控制css相关属性
+## 13. js 控制css相关属性
 
 ```javascript
 <button id="box1" onclick="fun1()">点击我换颜色</button>
@@ -846,7 +846,7 @@ function fun3(){
 }
 ```
 
-### 14. js 事件
+## 14. js 事件
 
 ```javascript
 <style>
@@ -891,7 +891,7 @@ function fun1() {
     }
 ```
 
-### 15. 模态框
+## 15. 模态框
 
 ```javascript
 <style>
@@ -937,7 +937,7 @@ x.onclick = function() {
 }
 ```
 
-### 16. ajax异步加载
+## 16. ajax异步加载
 
 ```javascript
 ajax 异步加载（异步的 JavaScript 和 XML）  不刷新页面，也能请求到数据
@@ -964,9 +964,9 @@ xhr.responseText 获取json格式的字符串
 xhr.responseHtml 获取xml
 ```
 
-## jQuery
+# jQuery
 
-### label补充
+## label补充
 
 ```javascript
 label为input输入框定义标注
@@ -977,7 +977,7 @@ label为input输入框定义标注
     <input type="password" id="password">
 ```
 
-### 1.jquery的引用
+## 1.jquery的引用
 
 ```javascript
 jquery 是原生js的封装
@@ -988,7 +988,7 @@ jquery 是原生js的封装
     <script src='https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.js'></script>
 ```
 
-### 2.jquery对象和dom对象的相互转化
+## 2.jquery对象和dom对象的相互转化
 
 ```
 jquery[索引] --> dom
@@ -997,7 +997,7 @@ $(dom对象)   -->jquery
 jquery对象和dom对象不能混用
 ```
 
-### 3.jquery选择器
+## 3.jquery选择器
 
 ```javascript
 1.语法：$() 得到的是 jquery对象
@@ -1035,7 +1035,7 @@ jquery对象和dom对象不能混用
 	注意： jquery[0] 取的是dom对象，不是jquery对象				
 ```
 
-### 4.文本内容
+## 4.文本内容
 
 ```javascript
 1.dom对象
@@ -1046,7 +1046,7 @@ jquery对象和dom对象不能混用
     html() 带标签的文本字符串
 ```
 
-### 5.类值操作
+## 5.类值操作
 
 ```javascript
 1.addClass()	添加类值
@@ -1060,7 +1060,7 @@ css优先级
 3.!import 最nb
 ```
 
-### 6.值操作
+## 6.值操作
 
 ```javascript
 获取用户输入的内容
@@ -1086,7 +1086,7 @@ css优先级
 3.多选框	$('input:checkbox:checked').val(['1','3'])
 ```
 
-### 7.创建标签实例
+## 7.创建标签实例
 
 ```javascript
 <button id="zouni">添加标签</button>
@@ -1110,7 +1110,7 @@ $('#zouni').click(function(){
 })
 ```
 
-### 8.文档操作
+## 8.文档操作
 
 ```javascript
 <div id="d1">
@@ -1129,7 +1129,7 @@ div.append('<h1>素人</a>')
 
 ```
 
-### 9.清空和删除
+## 9.清空和删除
 
 ```javascript
 1.删除
@@ -1138,7 +1138,7 @@ div.append('<h1>素人</a>')
 	$().empty()  相当于$().text=''
 ```
 
-### 10.事件冒泡
+## 10.事件冒泡
 
 ```javascript
 事件冒泡：有内到外触发
@@ -1166,14 +1166,14 @@ $('.c2').click(function(){
 
 ```
 
-### 11.绑定事件
+## 11.绑定事件
 
 ```javascript
 1.$().click(function(){})
 2.$().on('click',function(){})
 ```
 
-### 12.克隆
+## 12.克隆
 
 ```javascript
 <button class="c1">弹弹弹</button>
@@ -1184,7 +1184,7 @@ $('.c1').click(function(){
 })
 ```
 
-### 13.事件委托
+## 13.事件委托
 
 ```javascript
 指的是把原本绑定在子元素的事件，委托给父元素，让父元素担当事件监听的职务
@@ -1223,7 +1223,7 @@ $('tbody').on('click','.del',function(){
 })
 ```
 
-### 14.属性操作
+## 14.属性操作
 
 ```javascript
 1.prop 针对的是 checked enable disable selected 属性
@@ -1234,7 +1234,7 @@ $('tbody').on('click','.del',function(){
 	- 设置 $().attr(['xx':'00','hh':'gaga'])	
 ```
 
-### 15.常用事件
+## 15.常用事件
 
 ```javascript
 <style>
@@ -1285,7 +1285,7 @@ $('.dd').hover(
 )
 ```
 
-### 16.页面加载
+## 16.页面加载
 
 ```javascript
 <style>
@@ -1330,7 +1330,7 @@ $(document).ready(function(){
 })
 ```
 
-### 其他：
+## 其他：
 
 ```
 bootstrap   和 fontawesome (饿了么开源的项目)
@@ -1338,9 +1338,9 @@ bootstrap   和 fontawesome (饿了么开源的项目)
 
 
 
-## Django
+# Django
 
-### 1.web框架初识
+## 1.web框架初识
 
 请求响应流程
 ![image-20231015131255101](assets/image-20231015131255101.png)
@@ -1358,7 +1358,7 @@ djang flask tornado(异步) flaskApi....
 
 ```python
 1.wsgi.py
-	封装的socket模块
+	封装的socket模块，服务器网关接口
 2.urls.py
 	存储的是路由和视图函数的对应关系
 3.views.py
@@ -1464,7 +1464,7 @@ index.html
 </html>
 ```
 
-2. *阶段二 优化wsgi.py文件*
+2. *阶段二 优化wsgi.py文件*  
 
 ```python
 #减少if判断
@@ -1708,7 +1708,7 @@ static 文件夹下存放的是静态资源 css js picture等
 
 
 
-### 2.Http协议和Django初始
+## 2.Http协议和Django初始
 
 ```html
 http : 超文本传输协议  超文本（带有链接的文本数据）
@@ -1850,7 +1850,7 @@ templates文件下
 
 
 
-### 3.django的url
+## 3.django的url
 
 ```python
 虚拟环境：相互独立，相互隔离，同一个系统解释器，运行不同版本的包
@@ -2006,7 +2006,7 @@ dispatch 用法和装饰器  在执行请求方法之前做一些操作
 		class HomeView(View):
 ```
 
-### 4.模版渲染
+## 4.模版渲染
 
 ```python
 views.py
@@ -2064,6 +2064,7 @@ home.html
 ```
 
 ![image-20231018201150438](assets/image-20231018201150438.png)
+
 
 
 
@@ -2263,7 +2264,8 @@ zujian.html
 
 
 
-### 5.orm
+
+## 5.orm
 
 ```python
 orm:关系对象模型 
@@ -2324,8 +2326,9 @@ django配置连接mysql
 
 
 
+
 ```python
-记录的增删改查
+单表记录的增删改查
 
 增加
 	1.实例化模型类
@@ -2399,6 +2402,8 @@ models.Book.objects.get(id=4).delete()
 ![image-20231019215700102](assets/image-20231019215700102.png)
 
 
+
+
 ```python
 修改
 	# 修改方式1  通过queryset类型数据修改
@@ -2421,37 +2426,292 @@ models.Book.objects.get(id=4).delete()
 
 
 
+```python
+DatetimeField、DateField、TimeField这个三个时间字段，都可以设置如下属性
+auto_now_add
+    配置auto_now_add=True，创建数据记录的时候会把当前时间添加到数据库。
+
+auto_now
+    配置上auto_now=True，每次更新数据记录的时候会更新该字段，标识这条记录最后一次的修改时间。
+    
+django默认时间是utc英国时间修改为本地时间
+setting.py
+	# USE_TZ = True
+	USE_TZ = False
+```
 
 
 
+```python
+基于双下划线的模糊查询
+	# 以什么开头
+    obj_list = models.Book.objects.filter(title__startswith='python')
+    print(obj_list)
+    # 以什么结尾
+    obj_list = models.Book.objects.filter(title__endswith='编程')
+    print(obj_list)
+    # 包含
+    obj_list = models.Book.objects.filter(title__contains='python')
+    print(obj_list)
+    # 不区分大小写的包含
+    obj_list = models.Book.objects.filter(title__icontains='python')
+    print(obj_list)
+    # 大于
+    obj_list = models.Book.objects.filter(price__gt=10)
+    print(obj_list)
+    # 大于等于
+    obj_list = models.Book.objects.filter(price__gte=10)
+    print(obj_list)
+    # 小于
+    obj_list = models.Book.objects.filter(price__lt=10)
+    print(obj_list)
+    # 小于等于
+    obj_list = models.Book.objects.filter(price__lte=10)
+    print(obj_list)
+    # 价格大于等于15并且小于等于20
+    obj_list = models.Book.objects.filter(price__in=[15, 18, 30])
+    print(obj_list)
+    # between and
+    obj_list = models.Book.objects.filter(price__range=[15, 20])
+    print(obj_list)
+    # and 查询
+    obj_list=models.Book.objects.filter(id=12,price=10)
+    print(obj_list)
+    # 年份
+    obj_list=models.Book.objects.filter(pub_date__year='2023')
+    print(obj_list)
+    obj_list=models.Book.objects.filter(pub_date__month='10')
+    print(obj_list)
+    obj_list=models.Book.objects.filter(pub_date__day='9')
+    print(obj_list)
+```
+
+![image-20231020195249389](assets/image-20231020195249389.png)
+![image-20231020195320027](assets/image-20231020195320027.png)
 
 
 
+```python
+13个查询api接口
+	1.filter() 	queryset对象
+    2.all()		queryset对象
+    3.get()		模型类对象
+    4.exclude()	排除 queryset对象
+    5.order_by() 排序 queryset对象
+    6.reveser()	 反转 queryset对象
+    7.count()	计数 queryset对象
+    8.first()	queryset对象的第一个 类模型对象
+    9.last()	queryset对象的最后一个 类模型对象
+    10.distinct()	去重 一般配合values和values_list来使用
+    11.exists()	判断查询结构是否有数据
+    12.values()	查询指定字段，返回为queryset对象内容为字典数据
+    13.values_list()	查询指定字段，返回为queryset对象内容为元祖数据
+只要返回数据还是query_set对象，就可以调用这些方法
+```
 
 
 
+```python
+表关系设计
+from django.db import models
+一对一 拆表：可以加快查询速度
+    # 作者表
+    class Author(models.Model):
+        name = models.CharField(max_length=32)
+        age = models.IntegerField()
+        # au = models.OneToOneField(to="AuthorDetail", to_field="id", on_delete=models.CASCADE)
+        # au = models.OneToOneField("AuthorDetail")
+        # au = models.IntegerField()
+        au = models.OneToOneField("AuthorDetail", db_constraint=False)
+        # db_constraint=False取消foreign key的强制约束效果,还可以继续使用orm的提供的属性或者方法来操作关系记录
+        # foreign key + unique
+        au = models.ForeignKey("AuthorDetail", unique=True)
+    # 属性是OneToOneField或者ForeignKey,那么生成的对应字段是  属性名称_id	au_id
+
+    #作者详细信息表
+    class AuthorDetail(models.Model):
+        birthday=models.DateField()
+        telephone=models.BigIntegerField()
+        addr=models.CharField(max_length=64)
+多对一
+    # 出版社表
+    class Publish(models.Model):
+        name=models.CharField( max_length=32)
+        city=models.CharField( max_length=32)
+
+
+    #书籍表
+    class Book(models.Model):
+
+        title = models.CharField( max_length=32)
+        publishDate=models.DateField()
+        price=models.DecimalField(max_digits=5,decimal_places=2)
+
+        # publishs=models.ForeignKey(to="Publish",to_field="id",on_delete=models.CASCADE)
+        publishs=models.ForeignKey("Publish")
+        #多对多
+        authors = models.ManyToManyField('Author')
+
+多对多
+    # class authortobook(models.Model):
+    # book_id = models.ForeignKey('Book')
+    # author_id = models.ForeignKey('Author')
+在被关联表中，如果删除一个记录，那么外键关联到此记录的都会被删除
+```
+
+**注意：数据表生成失败要到django_migrations表中删除app记录才能重新生成**
+![image-20231020213309035](assets/image-20231020213309035.png)
+
+![image-20231020214657286](assets/image-20231020214657286.png)
+
+**models.py 不能加，号，会识别不出来，但是不会报错没有相应的字段，作者表中没有name**
+![image-20231020214822164](assets/image-20231020214822164.png)
+**生成成功！**
+![image-20231020215145698](assets/image-20231020215145698.png)
+
+**多张表记录的增删改查**
+
+*多张表记录的增操作*
+
+***一对一***
+
+![image-20231020221453727](assets/image-20231020221453727.png)
+![image-20231020221309787](assets/image-20231020221309787-16978111915091.png)
+
+![image-20231020221345700](assets/image-20231020221345700.png)
+**多对一**
+
+```python
+    # 一对多添加数据
+    obj_pub = models.Publish.objects.get(id=1)
+    models.Book.objects.create(
+        title='斗破苍芎',
+        price=123,
+        publishDate='2015-02-13',
+        # pulish_id=obj_pub.id,     #如果属性名称_id添加数据,那么值为关联记录的id值
+        publish=obj_pub  # 如果是属性名称添加数据，那么值为关联记录的类模型对象
+    )
+```
+
+![image-20231021185314751](assets/image-20231021185314751.png)
+**多对多**
+
+```python
+ # 多对多添加数据
+    book_obj = models.Book.objects.get(title='吞噬星空')
+    author1 = models.Author.objects.get(name='辰东')
+    author2 = models.Author.objects.get(name='我不吃西红柿')
+    book_obj.authors.add(*[author1,author2])
+```
+
+![image-20231021193540109](assets/image-20231021193540109.png)
+
+
+```python
+多张表的删除和修改
+	# 一对一删除
+    # models.Author.objects.get(name='天蚕土豆').delete()
+    # 外键关联到此条记录的都会被删除
+    models.AuthorDetail.objects.get(address='广州').delete()
+    
+    #一对多 
+    # models.Book.objects.get(id=1).delete()
+	# models.Publish.objects.get(id=2).delete()
+   
+	#多对多
+	book_obj = models.Book.objects.get(id=6)
+	# book_obj = models.Book.objects.filter(id=5)[0]
+	# book_obj.authors.remove(1)  # 4   1  删除第三张表中id为6 并且作者id为1的记录
+	# book_obj.authors.clear()  # 清空 第三张表中的书籍id为5的所有记录
+	# book_obj.authors.remove(1, 4)  #删除多条
+	# book_obj.authors.remove(*[1, 4]) #删除多条
+    
+    # 修改
+	# 一对一
+	# models.Author.objects.filter(id=3).update(
+	# 	age=38,
+	# 	# au_id=5,
+	# 	# au=models.AuthorDetail.objects.get(id=5),
+	# )
+
+	# 一对多
+	# models.Book.objects.filter(id=4).update(
+		# title='白洁1',
+		# publishs=models.Publish.objects.get(id=2),
+		# publishs_id=2
+	# )
+
+	# 多对多
+
+	obj = models.Book.objects.get(id=5)
+	obj.authors.set(['1','3'])  #clear + add  跟新,先清空book_id为5的第三张表里的记录,再添加5 1和5 3记录
+```
+
+**基于对象的跨表查询**（模型类对象）
+
+```python
+正向查询：关联属性在那张表，通过该表的数据区查询另外一张表的数据，这种叫做正向查询
+正向查询靠属性，反向查询靠表名小写
+一对一
+	# 查询天蚕土豆的手机号(正向查询)
+    res=models.Author.objects.get(name='天蚕土豆')
+    res=res.au.telephone
+    print(res)		#123
+    # 查询手机号为123的作者姓名(反向查询)
+    res = models.AuthorDetail.objects.get(telephone=123)
+    res = res.author.name
+    print(res)		#天蚕土豆
+一对多
+    # 查询吞噬星空是哪个出版社出版的(正向查询)
+    res = models.Book.objects.get(title='吞噬星空')
+    res = res.publish.name
+    print(res)  # 蓝天出版社
+    # 查询夕阳红出版社出了那些书(反向查询) 一对多关系时，使用小写名_set返回的是queryset对象
+    res = models.Publish.objects.get(name='夕阳红出版社')
+    res = res.book_set.all() #类似与object控制器
+    print(res)
+    # <QuerySet [<Book: 斗破苍芎>, <Book: 王炸3>, <Book: 王炸4>, <Book: 王炸6>, <Book: 王炸8>]>
+多对多
+    # 查询吞噬星空的作者是谁(正向查询)
+    res = models.Book.objects.get(title='吞噬星空')
+    res = res.authors.all()  # 类似与object控制器
+    print(res)  # <QuerySet [<Author: 辰东>, <Author: 我不吃西红柿>]>
+    # 辰东写了那几本书(反向查询)
+    res = models.Author.objects.get(name='辰东')
+    res = res.book_set.all()  # 类似与object控制器
+    print(res)  # <QuerySet [<Book: 吞噬星空>, <Book: 王炸1>, <Book: 王炸3>]>
+```
 
 
 
+**基于双下划线的跨表查询**
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```python
+基于双下划线的跨表查询	--mysql连表查询
+正向查询靠属性，反向查询靠表名小写
+一对一
+    # 查询沙漠的手机号(正向)
+    res = models.Author.objects.filter(name='沙漠').values('au__telephone')
+    print(res)  # <QuerySet [{'au__telephone': 990}]>
+    # 查询手机号为990的作者姓名(反向)
+    res = models.AuthorDetail.objects.filter(telephone=990).values('author__name')
+    print(res)  # <QuerySet [{'author__name': '沙漠'}]>
+一对多
+    # 查询斗破苍芎是哪个出版社出版的()
+    res = models.Book.objects.filter(title='斗破苍芎').values('publish__name')
+    print(res)  # <QuerySet [{'publish__name': '夕阳红出版社'}]>
+    # 查询夕阳红出版社出版了那些书
+    res = models.Publish.objects.filter(name='夕阳红出版社').values('book__title')
+    print(res)  
+    # <QuerySet [{'book__title': '斗破苍芎'}, {'book__title': '王炸3'}, {'book__title': '王炸4'}, {'book__title': 		'王炸6'}, {'book__title': '王炸8'}]>
+多对多
+    # 查询吞噬星空的作者是谁(正向查询)
+    res = models.Book.objects.filter(title='吞噬星空').values('authors__name')
+    print(res)  # <QuerySet [{'authors__name': '辰东'}, {'authors__name': '我不吃西红柿'}]>
+    # 辰东写了那几本书(反向查询)
+    res = models.Author.objects.filter(name='辰东').values('book__title')
+    print(res)  # <QuerySet [{'book__title': '吞噬星空'}, {'book__title': '王炸1'}, {'book__title': '王炸3'}]>    
+```
 
 
 
