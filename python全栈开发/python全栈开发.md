@@ -1855,7 +1855,7 @@ templates文件下
 ```python
 虚拟环境：相互独立，相互隔离，同一个系统解释器，运行不同版本的包
 #创建虚拟环境
-virtualenv xx  --python python=3.8
+virtualenv xx(路径)  --python python=3.8
 #激活虚拟环境
 cd ./xx/Scripts
 activate
@@ -1865,39 +1865,98 @@ deactivate
 
 ```python
 url注意的点	
-    1.url(r'^index/', views.index),     路径的前置导航斜杠(对应根路径那个),不需要写,django自动加上
+    1.re_path(r'index/', views.index),     路径的前置导航斜杠(对应根路径那个),不需要写,django自动加上
     2.http://127.0.0.1:8000/index 当我们访问django的url路径时,如果请求路径最后没有写/,那么django会发一个重定向的响应,告	  诉浏览器,加上/再来访问我
     settigns.py配置文件中修改:
         默认为True, 当值为True时,django需要请求路径后面加上斜杠,如果请求没有加,那么响应301重定向,让浏览器街上斜杠重新请			求
         APPEND_SLASH = True  
         值为False,就关闭了django的这个功能
         APPEND_SLASH = False        
-	路由捕获成功了就不会继续循环了(for i in urlpatterns:...break)
-    url(r'^index/$', views.index),  
-    url(r'^index/xx/xx/', views.index2),  
-    注意: 路径写正则时,要注意最好精确匹配,尾部加上$,或者写正则时,尽量不要路径差不多    
-
-    url(r'^$', views.home),  #匹配根路径的写法  
+    re_path(r'index/', views.index),  127.0.0.1:8000/index/123会被捕获
+    path('index/<int:year>') 会被捕获，一旦捕获就不会循环urlpatterns
+    re_path(r'index/xx/xx/', views.index2),  
+    re_path(r'', views.home),  #匹配根路径的写法  
 ```
 
 ```python
 url的分组
 	1.无名分组 (位置传参)
-    	url(r'^books/(\d+)/(\d+)/', views.books) 
+    	re_path(r'books/(\d+)/(\d+)/', views.books) 
         视图函数写法:
         def books(request, y, m):
         print(y, m)  
         return HttpResponse('%s-%s所有书籍都在这儿,你随意看' % (y, m))    
     2.有名分组(函数参数必须和有名分组名称相同)
-	url(r'^books/(?P<year>\d+)/(?P<month>\d+)/', views.books2)
+    path('books/<int:year>/<int:month>',views.books2)
+	re_path(r'books/(?P<year>\d+)/(?P<month>\d+)/', views.books2)
     def books2(request,  month, year):
         print(year, month) 
         return HttpResponse('%s--%s所有书籍都在这儿,你随意看' % (year,month ))
 ```
 
 ```python
-url的反向解析
+url的别名反向解析
+urls.py
+	path('home/<int:year>/', views.home,name='home'),
+    re_path(r'login/(\d+)', views.login1,name='login1'),
+    re_path(r'login/(\d+)/(?P<year>\d+)', views.login2,name='login2')
+app01/urls.py
+	def home(request, year):
+        print(reverse('home', kwargs={'year': year}))
+        return HttpResponse('首页登录！')
+    def login1(request, number):
+        print(reverse('login1', args=(number,)))
+        return HttpResponse('ok')
+    def login2(request, number, year):
+        print(reverse('login2', args=(number,), kwargs={'year': year}))
+        return HttpResponse('ok')
+html
+	def home(request, year):
+    	print(reverse('home', kwargs={'year': year}))
+        #将动态参数传给html
+    	return render(request,'home.html',{'year': year})
+	<a href="{% url 'home' year%}" >首页</a>
+重定向  
+    redirect('')里面内置了reverse() 可以直接传别名name
+    redirect('name')
+    
+    
+路由分发
+总路由
+	urlpatterns = [
+    path(r'admin/', admin.site.urls),
+    path(r'app01/', include('app01.urls')),  #app01/urls.py
+   	path(r'app02/', include('app02.urls')),  #app01/urls.py
+    path(r'app03/', include('app03.urls')),  #app01/urls.py
+	]
+app01/urls.py
+    urlpatterns = [
+	path('index/',views.index, name='index'),
+	]
+app02/urls.py
+    urlpatterns = [
+	path('index/',views.index, name='index'),
+	]
+app02/urls.py
+    urlpatterns = [
+	path('index/',views.index, name='index'),
+	]
+反向解析是总是返回的是最后一个路径
 
+
+命名空间：防止命名冲突
+总路由:
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('app01/', include('app01.urls',namespace='app01')),  #app01/urls.py
+    path('app02/', include('app02.urls',namespace='app02')),  #app01/urls.py
+    path('app03/', include('app03.urls',namespace='app03')),  #app01/urls.py
+]
+视图函数下解析
+	reverse('app01:index')   127.0.0.1:8000/app01/index
+    
+模版反向解析
+	{%url 'app01:index' %}	命名名称：别名
 ```
 
 ```python
@@ -2318,11 +2377,10 @@ django配置连接mysql
 	import pymysql
     pymysql.install_as_MySQLdb()
 5.执行数据库同步指令
-	只要换了数据库就会在执行一边(默认db.sqlite3)
+	只要换了数据库就会在执行一遍(默认db.sqlite3)
 ```
 
 ![image-20231019203249868](assets/image-20231019203249868.png)
-
 
 
 
@@ -2400,6 +2458,7 @@ models.Book.objects.get(id=4).delete()
 ```
 
 ![image-20231019215700102](assets/image-20231019215700102.png)
+
 
 
 
@@ -2607,6 +2666,8 @@ from django.db import models
 ![image-20231021193540109](assets/image-20231021193540109.png)
 
 
+
+
 ```python
 多张表的删除和修改
 	# 一对一删除
@@ -2697,10 +2758,10 @@ from django.db import models
     res = models.AuthorDetail.objects.filter(telephone=990).values('author__name')
     print(res)  # <QuerySet [{'author__name': '沙漠'}]>
 一对多
-    # 查询斗破苍芎是哪个出版社出版的()
+    # 查询斗破苍芎是哪个出版社出版的(正向查询)
     res = models.Book.objects.filter(title='斗破苍芎').values('publish__name')
     print(res)  # <QuerySet [{'publish__name': '夕阳红出版社'}]>
-    # 查询夕阳红出版社出版了那些书
+    # 查询夕阳红出版社出版了那些书(反向查询)
     res = models.Publish.objects.filter(name='夕阳红出版社').values('book__title')
     print(res)  
     # <QuerySet [{'book__title': '斗破苍芎'}, {'book__title': '王炸3'}, {'book__title': '王炸4'}, {'book__title': 		'王炸6'}, {'book__title': '王炸8'}]>
@@ -2715,5 +2776,752 @@ from django.db import models
 
 
 
+**聚合查询**
 
-​		
+```python
+
+查询所有书的平均价格，最大值，最小值，和，计数
+	from django.db.models import Avg, Max, Min, Sum,Count
+    res = models.Book.objects.all().aggregate(Avg('price'), Max('price'), Min('price'), Sum('price'))
+    print(res)
+    # {'price__avg': Decimal('34.363636'), 'price__max': Decimal('123.00'), 'price__min': Decimal('11.00'), 'price__sum': Decimal('378.00')}
+```
+
+
+
+**分组**
+
+```python
+annotate 默认以id分组
+  	# 查询每个出版社出书的平均价格  正向属性，反向表名小写
+    res = models.Book.objects.values('publish_id').annotate(Avg('price'))
+    print(res)
+    # <QuerySet [{'publish_id': 1, 'price__avg': Decimal('36.800000')}, {'publish_id': 2, 'price__avg': 		 	Decimal('32.333333')}]>
+    res = models.Publish.objects.annotate(price=Avg('book__price')).values('price')
+    print(res)
+    # <QuerySet [{'price': Decimal('36.800000')}, {'price': Decimal('32.333333')}]>
+```
+
+
+
+**F查询**
+
+```python
+本表查询
+# 将所有书的价格上调10元
+book_obj=models.Book.objects.all()
+for book in book_obj:
+    book.price+=10
+    book.save()
+
+# F查询
+models.Book.objects.all().update(price=F('price') + 10)  # 支持四则运算
+
+# 查询点赞数大于评论数的书籍
+book_obj = models.Book.objects.all()
+for book in book_obj:
+    if book.dianzan > book.comment:
+        print(book)
+
+# F 查询
+# <QuerySet [<Book: 吞噬星空>, <Book: 王炸6>, <Book: 王炸8>]>
+res = models.Book.objects.filter(dianzan__gt=F('comment'))
+print(res)
+```
+
+
+
+**Q查询**
+
+```python
+Q查询，多条件查询
+and &   or |  not ~
+# 查询一下点赞数大于10或者评论数大于10的所有书籍
+    res = models.Book.objects.filter(Q(dianzan__gt=10) | Q(comment__gt=10)).values('title')
+    print(res)
+    # <QuerySet [{'title': '斗破苍芎'}, {'title': '吞噬星空'}, {'title': '王炸1'}, {'title': '王炸3'}, {'title': '王	   炸6'}, {'title': '王炸7'}, {'title': '王炸8'}, {'title': '王炸9'}]>
+# 查询一下点赞数大于10且评论数大于10的所有书籍
+    res=models.Book.objects.filter(Q(dianzan__gt=10)&Q(comment__gt=10)).values('title')
+    print(res)
+    #<QuerySet [{'title': '王炸3'}, {'title': '王炸6'}, {'title': '王炸7'}, {'title': '王炸8'}]>
+    res=models.Book.objects.filter(dianzan__gt=10,comment__gt=10).values('title')
+    print(res)
+    #<QuerySet [{'title': '王炸3'}, {'title': '王炸6'}, {'title': '王炸7'}, {'title': '王炸8'}]>
+# 点赞数大于10或者评论数大于10的并且价格大于30的书籍
+    res = models.Book.objects.filter(Q(dianzan__gt=10) | Q(comment__gt=10) & Q(price__gt=30)).values('title')
+    print(res)
+    res=models.Book.objects.filter(Q(dianzan__gt=10) | Q(comment__gt=10) ,price__gt=30).values('title')
+    print(res)
+    res = models.Book.objects.filter(Q(dianzan__gt=10) | Q(comment__gt=10) & ~Q(price__lt=30)).values('title')
+    print(res)
+    #<QuerySet [{'title': '斗破苍芎'}, {'title': '吞噬星空'}, {'title': '王炸1'}, {'title': '王炸3'}, {'title': '王炸	   6'}, {'title': '王炸7'}, {'title': '王炸8'}, {'title': '王炸9'}]>
+```
+
+
+
+**锁和事务**
+
+pass 不太熟后面补
+
+
+
+
+
+## 6.ajax请求和原生sql
+
+
+
+**执行原生sql语句**
+
+```python
+方式1
+	raw() #只能操作本表数据，返回的是RawQuerySet，里面放的是模型类对象
+	res=models.Book.objects.raw("select * from 	    app01_book where price>=100;  ")
+    print(res)
+    #<RawQuerySet: select * from app01_book where price>=100;  >
+    for book in res:
+        print(book.title)
+	    #斗破苍芎
+        #吞噬星空
+
+        
+方式二
+	connection模块
+    # 找到以王开头的书籍
+    from django.db import connection
+    cursor = connection.cursor()
+    sql='select * from app01_book where title like "王%";'
+    cursor.execute(sql)
+    ret=cursor.fetchall()
+    for row in ret:
+        print (row)
+#(3, '王炸1', datetime.date(2020, 1, 1), Decimal('31.00'), 2, 13, 4)
+#(4, '王炸2', datetime.date(2020, 1, 2), Decimal('32.00'), 2, 2, 1)
+#(5, '王炸3', datetime.date(2020, 1, 3), Decimal('33.00'), 1, 37, 26)
+#(6, '王炸4', datetime.date(2020, 1, 4), Decimal('34.00'), 1, 4, 2)
+#(7, '王炸5', datetime.date(2020, 1, 5), Decimal('35.00'), 2, 4, 2)
+#(8, '王炸6', datetime.date(2020, 1, 6), Decimal('36.00'), 1, 15, 24)
+#(9, '王炸7', datetime.date(2020, 1, 7), Decimal('37.00'), 2, 18, 12)
+#(10, '王炸8', datetime.date(2020, 1, 8), Decimal('38.00'), 1, 11, 88)
+#(11, '王炸9', datetime.date(2020, 1, 9), Decimal('39.00'), 2, 13, 2)
+
+```
+
+
+
+**简单认证示例**
+
+```python
+登录失败，页面刷新	 form表单提交数据时会刷新
+	views.py
+    def login(request):
+        if request.method == 'POST':
+            username = request.POST.get('username')
+            password = request.POST.get('password')
+            # 数据经历编码解码操作后接收到的数据是字符串
+            if username == 'root' and password == '123':
+                return HttpResponse('login!')
+
+        else:
+            return render(request, 'login.html')
+        return render(request, 'login.html', {'error': '用户名或密码有误'})
+    
+    login.html
+    <h1>登录页面</h1>
+	<form action="" method="post">
+        <div>{{ error }}</div>
+        用户名: <input type="text" name="username" >
+        密码: <input type="password" name="password">
+        <input type="submit">
+	</form>	
+    
+    
+    登录失败，页面刷新，保存之前数据
+    views.py
+    return render(request, 'login.html', {'error': '用户名或密码有误','username':username,'password':password})
+
+	login.html
+    <h1>登录页面</h1>
+	<form action="" method="post">
+        <div>{{ error }}</div>
+        用户名: <input type="text" name="username" value="{{username}}">
+        密码: <input type="password" name="password" value="{{password}}">
+        <input type="submit">
+	</form>	
+```
+
+
+
+**ajax请求**
+
+```python
+特点：异步提交，局部刷新
+views.py
+def login(request):
+    if request.method == 'POST':
+        print(request.POST)
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        # 数据经历编码解码操作后接收到的数据是字符串
+        if username == 'root' and password == '123':
+            return HttpResponse('login!')
+
+    else:
+        return render(request, 'login.html')
+    # 修改登录失败的状态码
+    ret=HttpResponse('not ok!')
+    ret.status_code=400
+    return ret
+
+
+login.html
+用户：<input type="text" id="username">
+密码：<input type="password" id="password">
+<button type="submit" id="btn">ajax请求</button>
+<h1 id="error" style="color: red"  ></h1>
+<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.js"></script>
+<script>
+    $('#btn').click(function () {
+        //获取用户输入的数据
+        var username = $('#username').val()
+        var password = $('#password').val()
+
+        $.ajax({
+            type: 'POST',
+            url: '/login/', //前面加/的是绝对路径
+            data:{'username':username,'password':password},
+            success: function (res) {
+                // res 接受的是请求成功后响应的结果，后台返回的状态码是2xx/3xx ajax会自动调用回调函数并将接受到的响应传递给函数
+                console.log(res)
+                //登录成功
+                $('#error').text('login！')
+            },
+            error: function (res) {
+                // res 接受的是请求失败后响应的结果，后台返回的状态码是4xx/5xx ajax会自动调用回调函数并将接受到的响应传递给函数
+                console.log(res)
+                $("#error").text(res.responseText)
+            }
+        })
+
+    })
+</script>
+```
+
+![image-20231024104629991](assets/image-20231024104629991.png)
+![image-20231024104655493](assets/image-20231024104655493.png)
+
+
+
+**ajax获取数据案例**
+
+```python
+views.py
+def login(request):
+    return render(request, 'login.html')
+
+def home(request):
+    import json
+    data = {'name': '刘栋', 'age': 18}
+    data = json.dumps(data, ensure_ascii=False)
+    return HttpResponse(data)
+
+def index(request):
+    import json
+    data = ['黄瓜', '冬瓜', '茄子', '胡萝卜', '香蕉', '冬瓜']
+    data = json.dumps(data, ensure_ascii=False)
+    return HttpResponse(data)
+
+
+login.html
+<h1>home 页面</h1>
+<p id="success"></p>
+<ul id="food_list">
+</ul>
+<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.js"></script>
+<script>
+    $.ajax({
+        type: "get",
+        url: '/home/',
+
+        success: function (res) {
+            console.log(res, typeof (res))
+            //{"name": "刘栋", "age": 18} string
+            res = JSON.parse(res)
+            console.log(res, typeof (res))
+            //{name: '刘栋', age: 18} 'object'
+            $('#success').text(`${res.name}--${res.age}`)
+        },
+        error: function (res) {
+            pass
+        }
+    })
+
+    $.ajax({
+        type: "get",
+        url:  '/index/',
+
+        success: function (res) {
+            res = JSON.parse(res)
+            //创建标签
+            $.each(res, function (k,v) {
+            var li=document.createElement('li');
+            li.innerText=v;
+            $('#food_list').append(li)
+            })
+        },
+        error: function (res) {
+            pass
+        },
+    })
+
+</script>
+```
+
+**JsonResponse**
+
+```python
+views.py
+def login(request):
+    return render(request, 'login.html')
+
+def home(request):
+    import json
+    data = {'name': '刘栋', 'age': 18}
+    data = json.dumps(data, ensure_ascii=False)
+    ret= HttpResponse(data)
+    ret['content-type'] = 'application/json'
+    return ret
+
+def index(request):
+    # JsonResponse 序列化，并在响应头中添加content-type:application/json 键值对
+    data = ['黄瓜', '冬瓜', '茄子', '胡萝卜', '香蕉', '冬瓜']
+    # 非字典数据
+    return JsonResponse(data,safe=False)
+
+
+login.html
+//当后台响应头键值对中 包含 content-type:application/json ,ajax 就知道响应的数据是json数据，直接反序列化
+ $.ajax({
+        type: "get",
+        url: '/home/',
+
+        success: function (res) {
+            console.log(res, typeof (res))
+            $('#success').text(`${res.name}--${res.age}`)
+        },
+        error: function (res) {
+            pass
+        }
+    })
+
+    $.ajax({
+        type: "get",
+        url:  '/index/',
+        success: function (res) {
+            //创建标签
+            $.each(res, function (k,v) {
+            var li=document.createElement('li');
+            li.innerText=v;
+            $('#food_list').append(li)
+            })
+        },
+        error: function (res) {
+            pass
+        },
+    })
+```
+
+![image-20231024125221990](assets/image-20231024125221990.png)
+
+
+
+
+## 7.cookie和session
+
+
+
+**http协议**
+
+```python
+是一种无状态的短连接(无连接)
+无状态：不会记录任何客户端和服务端的信息
+短连接：一次请求，一次响应就断开连接
+
+connect:keep-alive
+connect:closed
+```
+
+
+
+**cookie**
+
+```python
+服务器产生，保存在浏览器的键值对，请求同一个网站时，浏览器会自动携带cookie发送给服务器
+特点：
+	1.保存在浏览器上
+	2.cookie的大小和数量都是有限制的
+	3.明文形式不太安全
+
+
+浏览器清除cookie快捷键 ctrl+shift+delete
+```
+
+![image-20231024153724776](assets/image-20231024153724776.png)
+
+
+**用户的登录认证    django cookie操作**
+
+```python
+views.py
+def login(request):
+    if request.method == 'POST':
+        username=request.POST.get('username')
+        password=request.POST.get('password')
+        if username=='root' and password=='123':
+            # 登录成功设置cookie
+            ret=redirect('home')
+            ret.set_cookie('is_login', True)
+            return ret
+        else:
+            return redirect('login')
+    else:
+
+        return render(request, 'login.html')
+
+
+def home(request):
+    print(request.COOKIES)
+    is_login=request.COOKIES.get('is_login')
+    # 编码解码后会变成字符串
+    print(is_login,type(is_login))
+    if is_login=="True":
+        return render(request, 'home.html')
+    else:
+        return redirect('login')
+
+
+def cart(request):
+    data = ['python入门到入狱', 'python Django实战', 'java之父余胜军', '前端']
+    is_login = request.COOKIES.get('is_login')
+    if is_login == "True":
+        return render(request, 'cart.html',{'data':data})
+    else:
+        return redirect('login')
+    
+    
+login.html
+<form method="post" action="/login/">
+    用户：<input type="text" name="username" >
+    密码：<input type="password" name="password" >
+    <input type="submit">
+</form>
+home.html
+<h1>欢迎来到 特莱联盟</h1>
+<br>
+<a href="/cart/" >购物车</a>
+cart.html
+<ul>
+    {% for i in data %}
+        <li>{{ i }}</li>
+    {% endfor %}
+</ul>
+    
+```
+
+![image-20231024164532955](assets/image-20231024164532955.png)
+![image-20231024164550805](assets/image-20231024164550805.png)
+
+
+
+**删除和设置cookie的参数**
+
+```python
+删除cookie  delete_cookie('is_login')
+def logout(request):
+    ret=redirect('login')
+    ret.delete_cookie('is_login')
+    return ret
+cart.html
+<ul>
+    {% for i in data %}
+        <li>{{ i }}</li>
+    {% endfor %}
+</ul>
+<a href="/logout/">退出登录</a>	
+
+
+set_cookie的一些参数
+	key, 键
+    value='', 值
+    max_age=None, 超时时间  单位秒数 None 表示关闭浏览器时失效
+    expires=None, 超时时间(IE requires expires, so set it if hasn't been already.).值为时间日期类型数据
+	path='/', Cookie生效的路径，/ 表示根路径，特殊的：根路径的cookie可以被任何url的页面访问
+	domain=None, Cookie生效的域名
+	secure=False, https传输
+	httponly=False 只能http协议传输，无法被JavaScript获取（不是绝对，底层抓包可以获取到也可以被覆盖）
+```
+
+![image-20231024190249269](assets/image-20231024190249269.png)
+
+
+
+
+**session**
+
+```python
+会话数据的唯一标识保存在客户端cookie中，而实际数据保存在服务器上
+特点：
+	1.保存在服务器上
+	2.没有大小限制
+	3.相对安全，不是明文存储
+```
+
+
+
+![image-20231024192057187](assets/image-20231024192057187.png)
+
+**django session操作**
+
+```python
+views.py
+def login(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        if username == 'root' and password == '123':
+            # 登录成功设置session
+            request.session['is_login'] = True
+            '''
+            1.生成随机字符串
+            2.加入到cookie中，{sessionid:'asdasdasdasdas'}
+            3.将设置的session数据，序列化后加密保存到数据库中
+            django_seeeion表中
+            '''
+            return redirect('home')
+
+        else:
+            return redirect('login')
+    else:
+
+        return render(request, 'login.html')
+
+
+def home(request):
+    status = request.session.get('is_login')
+    '''
+    1.取出cookie中sessionid对应随机字符串
+    2.将随机字符串去django_session表中找到对应的记录
+    3.将表中的session_data数据解密反序列化后，取出键对应的值
+    '''
+    if status == True:
+        return render(request, 'home.html')
+    else:
+        return redirect('login')
+
+
+def cart(request):
+    data = ['python入门到入狱', 'python Django实战', 'java之父余胜军', '前端']
+    status = request.session.get('is_login')
+    if status == True:
+        return render(request, 'cart.html', {'data': data})
+    else:
+        return redirect('login')
+
+
+def logout(request):
+    # 清除session
+    '''
+    1.删除cookie中sessionid对应的值    
+    2.删除数据库中对应的记录
+    如果客户端删除了cookie，服务器的记录是有时效的，到期自动删除
+    '''
+    request.session.flush()
+    return redirect('login')
+
+
+```
+
+
+
+设置session返回sessionid到cookie中
+
+![image-20231024194520095](assets/image-20231024194520095.png)
+
+
+
+再次请求的会携带cookie
+![image-20231024194704695](assets/image-20231024194704695.png)
+
+
+
+sessionid对应的值和django_session表中的key是一致的
+
+![image-20231024194856759](assets/image-20231024194856759.png)
+
+
+
+
+
+**session配置**
+
+```python
+session配置
+同一个浏览器一个session
+# 设置会话Session和Cookie的超时时间
+request.session.set_expiry(value)
+    * 如果value是个整数，session会在些秒数后失效。
+    * 如果value是个datatime或timedelta，session就会在这个时间后失效。
+    * 如果value是0,用户关闭浏览器session就会失效。
+    * 如果value是None,session会依赖全局session失效策略。
+
+    
+全局配置
+
+1. 数据库Session
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'   # 引擎（默认）
+
+2. 缓存Session
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'  # 引擎
+SESSION_CACHE_ALIAS = 'default'                            # 使用的缓存别名（默认内存缓存，也可以是memcache），此处别名依赖缓存的设置
+
+
+3. 文件Session
+SESSION_ENGINE = 'django.contrib.sessions.backends.file'    # 引擎
+SESSION_FILE_PATH = None                                    # 缓存文件路径(写文件夹路径)，如果为None，则使用tempfile模块获取一个临时地址tempfile.gettempdir() 
+
+4. 缓存+数据库
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'        # 引擎
+
+5. 加密Cookie Session
+SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'   # 引擎
+
+其他公用设置项：
+SESSION_COOKIE_NAME ＝ "sessionid"                       # Session的cookie保存在浏览器上时的key，即：sessionid＝随机字符串（默认）
+SESSION_COOKIE_PATH ＝ "/"                               # Session的cookie保存的路径（默认）
+SESSION_COOKIE_DOMAIN = None                             # Session的cookie保存的域名（默认）
+SESSION_COOKIE_SECURE = False                            # 是否Https传输cookie（默认）
+SESSION_COOKIE_HTTPONLY = True                           # 是否Session的cookie只支持http传输（默认）
+SESSION_COOKIE_AGE = 1209600                             # Session的cookie失效日期（2周）（默认）
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False                  # 是否关闭浏览器使得Session过期（默认）
+SESSION_SAVE_EVERY_REQUEST = False                       # 是否每次请求都保存Session，默认修改之后才保存（默认）
+```
+
+
+
+**session装饰器**
+
+```python
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```
+
+
+
+## 8.csrf_token
+
+
+
+
+
+
+
+
+
+
+
+
+
+```python
+
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 图书管理系统
+
+
+
+
+
+```python
+js指向，谁调用的this指向谁
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# vue
