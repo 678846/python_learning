@@ -2965,13 +2965,15 @@ def login(request):
         # 数据经历编码解码操作后接收到的数据是字符串
         if username == 'root' and password == '123':
             return HttpResponse('login!')
-
-    else:
+        else:
+            ## 修改登录失败的状态码
+            ret=HttpResponse('not ok!')
+            ret.status_code=400
+            return ret
+    if request.method == 'GET':
         return render(request, 'login.html')
-    # 修改登录失败的状态码
-    ret=HttpResponse('not ok!')
-    ret.status_code=400
-    return ret
+    
+    
 
 
 login.html
@@ -2989,7 +2991,7 @@ login.html
         $.ajax({
             type: 'POST',
             url: '/login/', //前面加/的是绝对路径
-            data:{'username':username,'password':password},
+            data:{username:username,password:password},
             success: function (res) {
                 // res 接受的是请求成功后响应的结果，后台返回的状态码是2xx/3xx ajax会自动调用回调函数并将接受到的响应传递给函数
                 console.log(res)
@@ -3266,6 +3268,7 @@ set_cookie的一些参数
 
 
 
+
 **session**
 
 ```python
@@ -3349,6 +3352,9 @@ def logout(request):
 
 
 
+
+
+
 再次请求的会携带cookie
 ![image-20231024194704695](assets/image-20231024194704695.png)
 
@@ -3357,6 +3363,7 @@ def logout(request):
 sessionid对应的值和django_session表中的key是一致的
 
 ![image-20231024194856759](assets/image-20231024194856759.png)
+
 
 
 
@@ -3411,21 +3418,48 @@ SESSION_SAVE_EVERY_REQUEST = False                       # 是否每次请求都
 **session装饰器**
 
 ```python
+自定义装饰器
+def session_check(func):
+    def inner(request, *args, **kwargs):
+        status = request.session.get('is_login')
+        if status == True:
+            ret = func(request, *args, **kwargs)
+            return ret
+        else:
+            return redirect('/login/')
+
+    return inner
 
 
+def login(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        if username == 'root' and password == '123':
+            return redirect('home')
+        else:
+            return redirect('login')
+    else:
+
+        return render(request, 'login.html')
 
 
+@session_check
+def home(request):
+    return render(request, 'home.html')
 
 
+@session_check
+def cart(request):
+    data = ['python入门到入狱', 'python Django实战', 'java之父余胜军', '前端']
+    return render(request, 'cart.html', {'data': data})
 
 
-
-
-
-
-
-
-
+@session_check
+def logout(request):
+	#清除session
+    request.session.flush()
+    return redirect('login')
 
 ```
 
@@ -3433,82 +3467,371 @@ SESSION_SAVE_EVERY_REQUEST = False                       # 是否每次请求都
 
 ## 8.csrf_token
 
+```python
+csrf：跨站请求伪造
+详述CSRF（Cross-site request forgery），中文名称：跨站请求伪造，也被称为：one click attack/session riding，缩写为：CSRF/XSRF。攻击者通过HTTP请求江数据传送到服务器，从而盗取回话的cookie。盗取回话cookie之后，攻击者不仅可以获取用户的信息，还可以修改该cookie关联的账户信息。
+
+token：就是一个随机字符串
+在Django中，post的请求不加csrf_token会报错Forbidden(403)，get的请求一般都是给数据，不会影响后台数据
+浏览器会自动携带cookie的数据，但是携带不了标签中的数据
+```
+
+![image-20231025204315759](assets/image-20231025204315759.png)
+
+Django token 认证失败
+
+![image-20231025212946327](assets/image-20231025212946327.png)
 
 
 
-
-
-
-
-
-
-
-
+![image-20231025201338436](assets/image-20231025201338436.png)
 
 ```python
+token验证
+标签中的token和cookie中的token进行解密，如果解密结果相同，请求就合法
+每次刷新，cookie中token不会发生改变，标签中的token发生改变(后台渲染的)
+```
+
+![image-20231025202825441](assets/image-20231025202825441.png)
 
 
+**django中csrf_token处理流程**
+
+```python
+1 在响应的页面中加入{% csrf_token %}标签,那么在进行模板渲染是会生成如下标签
+	<input type="hidden" name="csrfmiddlewaretoken" value="ppwN8yg1wVEyXDxtMpVIrc4zV3gHiDKKb9rwGPLaSGRc0HKhXAwpNrKjGDUHIxjj">
+
+2 并且在响应还有这个	{% csrf_token %}标签的页面时,会添加cookie键值对,如下
+	csrftoken:lsMQeJgVbIKKxlfz6umgYM8WOWx1Njr77cHzM0L4xtXoApsnhFXXk1OGzwb1dd0G	
+
+3 当用户从该页面提交数据时,会携带csrfmiddlewaretoken:ppwN8yg1wVEyXDxtMpVIrc4zV3gHiDKKb9rwGPLaSGRc0HKhXAwpNrKjGDUHIxjj和cookie键值对
+
+4 取出cookie中的csrftoken值和请求数据部分的csrfmiddlewaretoken的值,两者进行比较,这个随机字符串叫做token字符串. django如果在请求数据部分找不到tokne值,会去请求数据中的请求行部分,找一个叫做X-CSRFToken的键值对,如果这个键对应的值和cookie中csrftoken对应的值相同,也能通过认证.
+	过程:
+    	token字符串的前32位是salt， 后面是加密后的token， 通过salt能解密出唯一的secret字符串。
+        secret:是settings配置文件中的serect_key:
+              SECRET_KEY = 's!xbzez1zxrevmq7k_89%%-z&#)e7686pyq8pg@_bp_k_2s^ho'
+		django会验证表单中的token和cookie中token是否能解出同样的secret，secret一样则本次请求合法。
+		如果不同就403 forbidden
 
 
 ```
 
 
 
+**ajax请求通过csrftoken认证的方式**
 
 
 
+```html
+form表单提交自动提交token
+<form method="post" action="/login/">
+    {% csrf_token %}
+    用户：<input type="text" name="username" >
+    密码：<input type="password" name="password" >
+    <input type="submit">
+</form>
+{% csrf_token %}生成的是一个标签
+<input type="hidden" name="csrfmiddlewaretoken" value="sxVqlPTwgyNyhc4qWzebdPD5RG76HYPxxClRsVfvHc4eGkZAJKZafve713LDr0U0">
+
+
+views.py
+def login(request):
+    if request.method == 'POST':
+        print(request.POST)
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        # 数据经历编码解码操作后接收到的数据是字符串
+        if username == 'root' and password == '123':
+            return HttpResponse('login!')
+        else:
+            ## 修改登录失败的状态码
+            ret = HttpResponse('not ok!')
+            ret.status_code = 400
+            return ret
+    if request.method == 'GET':
+        return render(request, 'login.html')
+
+
+方式一：请求数据中携带token
+    {% csrf_token %}
+    用户：<input type="text" id="username">
+    密码：<input type="password" id="password">
+    <button type="submit" id="btn">ajax请求</button>
+    <h1 id="error" style="color: red"  ></h1>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.js"></script>
+    <script>
+        $('#btn').click(function () {
+            //获取用户输入的数据
+            var username = $('#username').val()
+            var password = $('#password').val()
+            var token = $("[name='csrfmiddlewaretoken']").val()
+
+            $.ajax({
+                type: 'POST',
+                url: '/login/', //前面加/的是绝对路径
+                data:{username:username,password:password,csrfmiddlewaretoken:token},
+                success: function (res) {
+                    // res 接受的是请求成功后响应的结果，后台返回的状态码是2xx/3xx ajax会自动调用回调函数并将接受到的响应传递给函数
+                    console.log(res)
+                    //登录成功
+                    $('#error').text('login！')
+                },
+                error: function (res) {
+                    // res 接受的是请求失败后响应的结果，后台返回的状态码是4xx/5xx ajax会自动调用回调函数并将接受到的响应传递给函数
+                    console.log(res)
+                    $("#error").text(res.responseText)
+                }
+            })
+
+        })
+    </script>
+
+	
+    
+方式二	
+    <script>
+        /* {% csrf_token %} 表示生成一个input的标签
+         {{ csrf_token }} 生成的input标签 value对应的值
+         */
+        $('#btn').click(function () {
+            //获取用户输入的数据
+            var username = $('#username').val()
+            var password = $('#password').val()
+            $.ajax({
+                type: 'POST',
+                url: '/login/', //前面加'/'的是绝对路径
+                / {{ csrf_token }} 前面要加引号，要不当做变量了
+                data: {username: username, password: password, csrfmiddlewaretoken: '{{csrf_token}}'},
+                success: function (res) {
+                    // res 接受的是请求成功后响应的结果，后台返回的状态码是2xx/3xx ajax会自动调用回调函数并将接受到的响应传递给函数
+                    console.log(res)
+                    //登录成功
+                    $('#error').text('login！')
+                },
+                error: function (res) {
+                    // res 接受的是请求失败后响应的结果，后台返回的状态码是4xx/5xx ajax会自动调用回调函数并将接受到的响应传递给函数
+                    console.log(res)
+                    $("#error").text(res.responseText)
+                }
+            })
+
+        })
+    </script>
+
+
+方式三：请求头中添加键值对，键必须是'X-CSRFToken',值对应的是cookie中token的值
+
+	{% csrf_token %}
+    用户：<input type="text" id="username">
+    密码：<input type="password" id="password">
+    <button type="submit" id="btn">ajax请求</button>
+    <h1 id="error" style="color: red"></h1>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.js"></script>
+    {#jquery-cookie $.cookie('csrftoken')失效提取不了cookie中的csrftoken#}
+    <srcipt src="https://cdn.bootcdn.net/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></srcipt>
+    <script>
+        $('#btn').click(function () {
+            var username = $('#username').val()
+            var password = $('#password').val()
+            $.ajax({
+                type: 'POST',
+                url: '/login/', 
+                data: {username: username, password: password},
+                headers: {
+                    //使用dom对象提取cookie中的token值
+                    'X-CSRFToken': document.cookie.split('=')[1],
+                },
+                success: function (res) {
+                    console.log(res)
+                    //登录成功
+                    $('#error').text('login！')
+                },
+                error: function (res) {
+                    console.log(res)
+                    $("#error").text(res.responseText)
+                }
+            })
+        })
+    </script>
+```
+
+没携带token
+
+![image-20231025224457377](assets/image-20231025224457377.png)
+
+携带token后
+
+![image-20231025224635534](assets/image-20231025224635534.png)
+![image-20231025224650126](assets/image-20231025224650126.png)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## 图书管理系统
-
-
-
-
+**content-type 介绍**
 
 ```python
-js指向，谁调用的this指向谁
+http协议默认的请求数据为application/x-www-form-urlencoded
+django可以解析的数据格式multipart/form-data  、application/x-www-form-urlencoded
+
+
+
+但是当我们指定了请求数据格式为application/json时,发送的数据格式为:
+	{a:1, b:2}  json数据
+
+django解析不了
 ```
+
+**django 解析数据大致代码**
+
+```python
+解析器:
+a = requset.META['content-type']
+if a == 'application/x-www-form-urlencoded':
+	data = request.body  -- a=1&b=2
+	l1 = data.split(&)
+	for i in l1:
+		k,v = i.split(=)
+		request.POST[k] = v
+
+elif a == 'multipart/form-data':  #文件片段数据格式
+	request.FIELS[]
+	
+文件格式数据
+```
+
+
+
+**ajax 发送一个application/json格式的数据**
+
+```python
+views.py
+    # request.POST 拿不到数据
+    print(request.POST.dict())
+    # <QueryDict: {}>
+    # 需要我们自己去request.body中获取原始的bytes类型数据,然后进行解析
+    data = request.body
+    print(request.body)
+    # b'{"username":"root","password":"12345"}'
+    import json
+    data = json.loads(data.decode('utf8'))
+    print(data, type(data))
+    # {'username': 'root', 'password': '12345'} <class 'dict'>
+    
+   
+html
+ $('#btn').click(function () {
+        var username = $('#username').val()
+        var password = $('#password').val()
+        $.ajax({
+            type: 'POST',
+            url: '/login/', 
+            //将data转化为json字符串
+            data:JSON.stringify({username: username, password: password}),
+            //修改请求数据格式
+            contentType: 'application/json',
+            headers: {
+                //使用dom对象提取cookie中的token值
+                'X-CSRFToken': document.cookie.split('=')[1],
+            },
+            success: function (res) {
+            },
+            error: function (res) {
+            }
+        })
+
+    })
+```
+
+
+
+**上传文件**
+
+```python
+form 表单上传文件
+
+upload.html
+<form method="post" action="/upload/" enctype="multipart/form-data">
+    {% csrf_token %}
+    用户：<input type="text" name="username" >
+    密码：<input type="password" name="password" >
+    图像：<input type="file" name="avatar">   //添加多文件 multiple
+    <input type="submit" id="btn">
+</form>
+
+views.py
+def upload(request):
+    if request.method == 'GET':
+        return render(request, 'upload.html')
+    elif request.method == 'POST':
+        # 如果没有修改请求格式content-type:multipart/form-data  post能获取到文件，但仅仅只是文件名
+        print(request.POST)
+        # <QueryDict: {'csrfmiddlewaretoken': ['fPSbOWSzVPFPiYyFQKSbZCPApTvXCAcUkUiCV2eymtWvH6tPDVDa1iqCzg9umChn'], 'username': ['1231'], 'password': ['123123123']}>
+        # 里面是文件数据(文件对象)  也可以是多文件
+        print(request.FILES)
+        # <MultiValueDict: {'avatar': [<InMemoryUploadedFile: girl.jpg (image/jpeg)>]}>
+        # 获取到文件对象
+        file_obj = request.FILES.get('avatar')
+        print(file_obj.name)  # girl.jpg
+        with open(file_obj.name, 'wb') as f:
+            for i in file_obj:
+                f.write(i)
+
+    return HttpResponse('ok')
+
+```
+
+![image-20231026131744888](assets/image-20231026131744888.png)
+
+**文件在项目目录下   gril.jpg**
+
+
+
+![image-20231026131843072](assets/image-20231026131843072.png)![image-20231026131921556](assets/image-20231026131921556.png)
+
+
+
+
+
+
+**ajax上传文件**
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 9.中间件
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
