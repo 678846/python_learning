@@ -2347,6 +2347,26 @@ orm->sql->pymysql->mysqld->磁盘
 
     Book生成的表名称为 应用名称_模型类名小写
 
+choices参数
+    sex_choice = (
+    (0, '女性'),
+    (1, '男性'),
+)
+
+class Author(models.Model):
+	name = models.CharField( max_length=32)
+	age = models.IntegerField()
+
+	sex_choice = (
+		(0, '女性'),
+		(1, '男性'),
+	)
+
+	sex = models.IntegerField(choices=sex_choice,default=1) #choices关键字固定的
+    
+获取get_字段名称_display        sex  models.Author.objects.get(id=1).get_sex_display()
+
+
 数据库同步指令
 	python manage.py makemigrations
 	python manage.py migrate
@@ -3839,10 +3859,10 @@ ajax 请求不会提交token，要手动添加
 **django的请求周期**
 
 ```python
-封装socket的wsgi接受请求，根据http协议将请求封装成request对象，传给中间件依次处理，然后交给路由，路由根据路径找到对应的视图，视图做业务逻辑的处理（orm数据交互，html模版渲染）返回一个响应对象，交给中间件倒序处理，wsgi将处理的数据返回给浏览器
+封装socket的wsgi接受请求，根据http协议将数据解包封装成request对象，传给中间件依次处理，然后交给路由，路由根据路径找到对应的视图，视图做业务逻辑的处理（orm数据交互，html模版渲染）返回一个响应对象，交给中间件倒序处理，wsgi将处理的数据返回给浏览器
 ```
 
-
+![image-20231027203904619](assets/image-20231027203904619.png)
 
 **中间件处理session校验**
 
@@ -3900,22 +3920,127 @@ MIDDLEWARE=[
 
 
 
-
-
-
-
 **自定义中间件**
 
 ```python
 
 中间件：作用：对所有的请求和响应进行统一处理
+自定义中间件流程：
+	1.在应用文件下创建一个py文件
+	2.在py文件下定义中间件
+	3.在settings.py文件下加上自定义类的路径
+
+    
+中间件的几个方法
+	1.process_request(self, request) 路由匹配之前
+	2.process_view(self, request, view_func, view_args, view_kwargs)	  路由匹配之后，视图执行之前
+	3.process_exception(self, request, exception)		捕获视图抛出的异常
+	4.process_response(self,request,response)		视图函数返回响应之后调用
+	5.process_template_response(self, request, response): 在渲染模板响应之前调用  用的很少
+
+```
+
+**process_request**
+![image-20231027191531478](assets/image-20231027191531478.png)
+
+**process_response**
+
+```python
+class Md1(MiddlewareMixin):
+
+	def process_request(self,request):
+
+		print('Md1-process_request')
+		# return HttpResponse('ok')  #如果return 的是一个HttpResponse对象,那么中间件执行到这里,直接返回
+	def process_response(self,request,response):
+		print('Md1-process_response')
+        # return HttpResponse('ojbk')  # 如果return是httpresponse对象,那么会替换视图函数中的返回值
+         #注意: 一定要return response
+		return response 
+
+class Md2(MiddlewareMixin):
+
+	def process_request(self, request):
+		print('Md2-process_request')
+
+	def process_response(self,request,response):
+		print('Md2-process_response')
+		return response
+```
+
+**process_view**
+![image-20231027192051502](assets/image-20231027192051502.png)
+
+**process_exception**
+
+![image-20231027192227313](assets/image-20231027192227313.png)
+
+
+**中间件的应用场景**
+
+```python
+1、做IP访问频率限制
+	某些IP访问服务器的频率过高，进行拦截，比如限制每分钟不能超过20次。
+2、URL访问过滤
+	设置白名单和黑名单
+	如果用户访问的是login视图（放过）
+	如果访问其他视图，需要检测是不是有session认证，已经有了放行，没有返回login，这样就省得在多个视图函数上写装饰器了！
+```
 
 
 
+**相关设置**
+
+```python
+获取到请求的ip地址
+request.META['REMOTE_ADDR']
+
+settings.py
+#允许请求的域名  *表示所有域名
+ALLOWED_HOSTS=['']
+
+Django程序启动
+python manage.py runserver 0.0.0.0:8001
+```
 
 
 
+# vue
 
+
+
+## 基础语法和使用
+
+
+
+**es6基础语法**
+
+```js
+let特点：
+	1.块级作用域：let声明的变量只在所在块有效，避免变量污染
+        function example(){
+            let a=10;
+            if (true){
+                let a=20;
+                console.log(a);//20
+            }
+        console.log(a);//10
+        }
+	2.不存在变量提升 let声明的变量不会在声明之间被访问或使用
+        console.log(a);	//Uncaught ReferenceError: a is not defined
+        let a=10;
+        console.log(b);	//undefined
+        var b=20;
+    	
+    3.不允许重复声明
+		let a=10;
+		let a=20;  //Uncaught SyntaxError: Identifier 'a' has already been declared
+    	
+    4 let声明的全局变量不从属于window对象，var声明的全局变量从属于window对象。
+    	let a = 10;
+        console.log(window.a);	//undefined
+        var b =20
+        console.log(window.b)	//20
 ```
 
 
@@ -3952,4 +4077,61 @@ MIDDLEWARE=[
 
 
 
-# vue
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
