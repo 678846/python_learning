@@ -3747,7 +3747,8 @@ html
 **上传文件**
 
 ```python
-form 表单上传文件
+form 表单上传文件 
+表单上传文件自动携带token
 
 upload.html
 <form method="post" action="/upload/" enctype="multipart/form-data">
@@ -3795,25 +3796,129 @@ def upload(request):
 
 **ajax上传文件**
 
+```python
+ajax 请求不会提交token，要手动添加
 
 
+<script>
+    $("#sub").click(function (){
+        var uname = $('[name="username"]').val();
+        var pwd = $('[name="password"]').val();
+        var file_obj = $('[type="file"]')[0].files[0];
+        // ajax上文件,必须将文件数据放到一个叫做formdata的对象中才能发送
+        var formdata = new FormData();
+        formdata.append('username',uname)
+        formdata.append('password',pwd)
+        formdata.append('csrfmiddlewaretoken', '{{ csrf_token }}')
+        formdata.append('avatar',file_obj)  // requser.FILES.get('avatar')
+        $.ajax({
+            url:'/upload/',
+            type:'post',
+            // ajax会将本次请求的数据格式改为 content-type: multipart/form-data
+            data:formdata,
+            // 告诉ajax不要对数据进行预处理和加工,向上传文件必须加上这两个参数
+            contentType:false,
+            processData: false,
+            success:function (res){
+                console.log(res)
+            }
+        })
+    });
 
-
-
-
-
-
-
-
-
-
-
+</script>
+```
 
 
 
 
 
 ## 9.中间件
+
+
+
+**django的请求周期**
+
+```python
+封装socket的wsgi接受请求，根据http协议将请求封装成request对象，传给中间件依次处理，然后交给路由，路由根据路径找到对应的视图，视图做业务逻辑的处理（orm数据交互，html模版渲染）返回一个响应对象，交给中间件倒序处理，wsgi将处理的数据返回给浏览器
+```
+
+
+
+**中间件处理session校验**
+
+```python
+views.py
+def login(request):
+    if request.method == 'POST':
+        print(request.POST)
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        if username == 'root' and password == '123':
+            request.session['is_login'] = True
+            return redirect('/home/')
+        else:
+            return render(request, 'login.html')
+    if request.method == 'GET':
+        return render(request, 'login.html')
+
+def home(request):
+    return render(request, 'home.html')
+
+def cart(request):
+    data = ['python入门到入狱', 'python Django实战', 'java之父余胜军', '前端']
+    return render(request, 'cart.html', {'data': data})
+
+def logout(request):
+    request.session.flush()
+    return redirect('login')
+
+
+
+在应用文件下穿件py文件
+my_middleware.py
+from django.shortcuts import render, redirect
+from django.utils.deprecation import MiddlewareMixin
+
+class My_middleware(MiddlewareMixin):
+    # 设置白名单
+    white_list = ['/login/', '/register']
+    def process_request(self, request):
+        path=request.path
+        # 不在白名单的需要session认证
+        if path not in self.white_list:
+            status = request.session.get('is_login')
+            # 如果不为True就不给通过
+            if not status:
+                return redirect('/login/')
+
+settings.py
+MIDDLEWARE=[
+    'app01.my_middleware.My_middleware',
+]
+
+```
+
+
+
+
+
+
+
+**自定义中间件**
+
+```python
+
+中间件：作用：对所有的请求和响应进行统一处理
+
+
+
+
+
+
+
+```
+
+
 
 
 
