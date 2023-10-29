@@ -3375,6 +3375,7 @@ def logout(request):
 
 
 
+
 再次请求的会携带cookie
 ![image-20231024194704695](assets/image-20231024194704695.png)
 
@@ -3383,6 +3384,7 @@ def logout(request):
 sessionid对应的值和django_session表中的key是一致的
 
 ![image-20231024194856759](assets/image-20231024194856759.png)
+
 
 
 
@@ -3504,6 +3506,7 @@ Django token 认证失败
 
 
 
+
 ![image-20231025201338436](assets/image-20231025201338436.png)
 
 ```python
@@ -3513,6 +3516,7 @@ token验证
 ```
 
 ![image-20231025202825441](assets/image-20231025202825441.png)
+
 
 
 **django中csrf_token处理流程**
@@ -4009,7 +4013,7 @@ python manage.py runserver 0.0.0.0:8001
 
 
 
-## 基础语法和使用
+## 1.基础语法和使用
 
 
 
@@ -4041,7 +4045,971 @@ let特点：
         console.log(window.a);	//undefined
         var b =20
         console.log(window.b)	//20
+
+
+关于第4个特点的简单说明：
+	ES5声明变量只有两种方式：var和function。
+	ES6有let、const、import、class再加上ES5的var、function共有六种声明变量的方式。
+	还需要了解顶层对象：浏览器环境中顶层对象是window.
+	ES5中，顶层对象的属性等价于全局变量。var a = 10; window.a 
+	ES6中，有所改变：var、function声明的全局变量，依然是顶层对象的属性；let、const、class声明的全局变量不属于顶层对象的属性，也就是说ES6开始，全局变量和顶层对象的属性开始分离、脱钩，目的是以防声明的全局变量将window对象的属性造成污染，因为window对象是顶层对象，它里面的属性是各个js程序中都可以使用的，不利于模块化开发，并且window对象有很多的自有属性，也为了防止对window的自由属性的污染，所以在ES6中将顶层对象和全局变量进行隔离。
+
+反引号 
+	1.支持换行
+	2.字符串格式化
+        str1=`
+    我
+        爱
+            我
+                自
+                    己
+    `
+    console.log(str1);
+    console.log(`你是${str1}`);
+
+
+    我						
+        爱
+            我
+                自
+                    己
+你是
+    我
+        爱
+            我
+                自
+                    己
 ```
+
+
+
+**ES6和ES5函数对比**
+
+```js
+函数对比
+    //ES5写法
+    //匿名函数
+    var add = function (x) {
+        return x
+    };
+    add(5);
+    //ES6的匿名函数
+    let add = function (x) {
+        return x
+    };
+    add(5);
+    //ES6的箭头函数,就是上面方法的简写形式
+    let add = x => {
+        console.log(x);
+        return x
+    };
+    console.log(add(20));
+    //更简单的写法，但不是很易阅读
+    let add = x => x;
+    console.log(add(5));
+    //多个参数的时候必须加括号，函数返回值还是只能有一个
+    let add = (x,y) => x+y;
+	//没有参数的，必须写一个()
+	let add=()=>6
+    add() //6
+	
+
+
+自定义对象中封装函数的写法
+	//ES5写法
+    var name = '彭于晏'
+    var person={
+        name:'刘栋',
+        age: 18,
+        //在自定义对象中绑定函数
+        f1:function(){
+            //this 表示对当前对象的引用
+            console.log(this)
+            //{name: '刘栋', age: 18, f1: ƒ}
+            console.log(this.name)
+            //刘栋
+        }
+    }
+    person.f1()
+	
+	var name = '彭于晏'
+	var person = {
+        name: '刘栋',
+        age: 18,
+        //在自定义对象中绑定函数
+        f1: function () {
+            console.log(this.name)//刘栋
+            let aa = {
+                name: 'xx',
+                //相当于af1:function(){},只是一种简写方式,称为对象的单体模式写法
+                af1(){
+                    console.log(this.name)
+                },
+                //箭头函数改变了this的指向，指向上层的对象
+                af: () => {
+                    console.log(this.name)
+                }
+            }
+            aa.af()//刘栋
+            aa.af1()//xx
+        }
+    }
+    person.f1()
+
+
+     //ES6的写法
+       let person={
+           name:'刘栋',
+           age:18,
+           f1(){
+               //this指向当前对象
+               console.log(this)	//{name: '刘栋', age: 18, f1: ƒ}
+               console.log(this.name)	//刘栋
+           }
+       }
+       person.f1()
+   
+ 
+   
+    let name="彭于晏";
+    let person={
+        name:'刘栋',
+        age:18,
+        f1(){
+            console.log(this.name)	//刘栋
+        },
+        f2:()=>{
+            //let 声明的全局变量不属于window对象
+            console.log(this)
+            console.log(this.name)	//undefined
+            
+        }
+    }
+
+    
+    
+类的写法对比
+//ES5
+  function Person(name,age) {
+       //封装属性
+       this.name=name;
+       this.age=age;
+   }
+   //封装方法
+   Person.prototype.f1=function() {
+       console.log('f1',this.name)
+   }
+   var p= new Person('刘栋',18)
+    p.f1()	//刘栋
+
+//ES6
+  //ES6 写类方法
+   class Person{
+       //封装属性
+       constructor(name,age){
+           this.name=name;
+           this.age=age
+       }
+       //封装方法
+       show_name(){
+           console.log('show_name',this.name)
+       }
+       show_age(){
+           console.log('show_age',this.age)
+       }
+   }
+   let p= new Person('彭于晏',18)
+   p.show_name()	//show_name 彭于晏
+   p.show_age()		//show_age 18
+```
+
+
+
+## **2.vue的简单使用**
+
+```js
+在官网下载地址： <https://cn.vuejs.org/v2/guide/installation.html>
+
+
+vue的简单使用
+    //声明一个vue对象
+    let vm = new Vue(
+        {
+            //设置当前vue对象控制的标签范围
+            el: '#app',
+            1.属性写法 方式一
+             data : {
+                 message:'Hello world!'
+             }
+            2.方式二
+                 data : function(){
+                  return {
+                      message:'函数，Hello world!'
+                  }
+             }
+            3.单体模式
+            data() {
+                return {
+                    message: '单体模式，Hello world!'
+            }
+        }
+    }
+    )
+
+总结
+1. vue的使用要从创建Vue对象开始
+   var vm = new Vue();
+   
+2. 创建vue对象的时候，需要传递参数，是自定义对象，自定义对象对象必须至少有两个属性成员
+   var vm = new Vue({
+     el:"#app",  # 圈地:要通过vue语法来控制id属性值为app的标签, 在这个标签内部,就可以使用vue的语法,这个标签外部不能使用vue语法
+
+	#数据属性定义的: 方式1
+	 data: {
+         数据变量:"变量值",
+         数据变量:"变量值",
+         数据变量:"变量值",
+     },
+	#方式2 (常用)
+	data(){
+            return {
+                msg:'hello world',
+            }
+        }
+   });
+   
+   el:圈地，划地盘，设置vue可以操作的html内容范围，值就是css的id选择器,其他选择器也可以，但是多用id选择器。
+   data: 保存vue.js中要显示到html页面的数据。
+   
+3. vue.js要控制器的内容外围，必须先通过id来设置。
+  <div id="app">
+      <h1>{{message}}</h1>
+      <p>{{message}}</p>
+  </div> 
+```
+
+****
+
+**vue中的变量可以直接进行一些js操作**
+
+```python
+  <!--    //直接放一个字符串-->
+        <h2>{{'hello beautiful girl!'}}</h2>
+    <!--    //四则运算-->
+        <h2>{{num+1}}</h2>
+        <h2>{{2+1}}</h2>
+    <!--    //自定义对象-->
+        <h2>{{ {'name':'ld'} }}</h2>
+    <!--    //获取对象的值-->
+        <h2>{{Person.name}}</h2>
+    <!--    //三元运算符-->
+        <h2>{{1>2?'真的':'假的'}}</h2>
+    <!--    //字符串反转-->
+        <h2>{{'hello'.split('').reverse().join('')}}</h2>
+    </div>
+
+
+    <!--//开发中使用vue.js 产品上线换成vue.min.js-->
+    <script src="vue.js"></script>
+    <script>
+         new Vue({
+            el:'#app',
+            data:{
+                num:10,
+                Person:{
+                    name:'刘栋'
+                }
+            }
+        })
+```
+
+![image-20231028200027907](assets/image-20231028200027907.png)
+
+
+**vue.js的M-V-VM思想**
+
+```js
+MVVM 是Model-View-ViewModel 的缩写，它是一种基于前端开发的架构模式。
+`Model` 指代的就是vue对象的data属性里面的数据。这里的数据要显示到页面中。
+`View`  指代的就是vue中数据要显示的HTML页面，在vue中，也称之为“视图模板” 。
+`ViewModel ` 指代的是vue.js中我们编写代码时的vm对象了，它是vue.js的核心，负责连接 View 和 Model，保证视图和数据的一致性，所以前面代码中，data里面的数据被显示中p标签中就是vm对象自动完成的。
+```
+
+![image-20231028201000569](assets/image-20231028201000569.png)
+
+
+**浏览器获取vm对象可以直接访问el和data属性,甚至可以访问data里面的数据**
+
+```python
+vm.$el		vue对象控制标签的范围
+vm.$data	vue对象要显示到页面的数据
+vm.Person.name	vue对象.变量名，显示data声明的数据
+```
+
+![image-20231028201417800](assets/image-20231028201417800.png)
+
+
+
+
+
+## 3.vue的指令系统
+
+
+
+```python
+Vue 的指令系统是 Vue.js 提供的一种特殊语法，用于在模板中进行 DOM 操作、数据绑定和事件处理等。指令以 v- 开头，后面跟着指令的名称，可以通过指令来操作元素的属性、样式、内容等。
+```
+
+
+
+**文本指令v-text和v-html**
+
+```js
+<div id="app">
+    <p>{{msg1}}</p>
+<!--   和 p>{{msg2}}</p>效果是一致的-->
+    <p v-text="msg2"></p>
+<!--  	将标签字符串识别为标签效果-->
+    <p v-html="msg3"></p>
+</div>
+
+<script src="vue.js"></script>
+<script>
+    let vm = new Vue({
+        el: '#app',
+        data: {
+            msg1: 'python学的好，女朋友年年在高考！',
+            msg2: 'python学的强，丈母娘刚上幼儿园！',
+            msg3:'<p>美团也是大厂</p>',
+        }
+    })
+
+</script>
+```
+
+![image-20231029100438303](assets/image-20231029100438303.png)
+
+
+
+
+**条件渲染指令v-if 和 v-show**
+
+```js
+<div id="app">
+<!--    动态增加删除标签，页面渲染开销大，结构发生改变，需要重新加载-->
+    <a href="http://www.baidu.com" v-if="num>20">百度</a>
+    <a href="http://www.sogou.com" v-else-if="num<20">搜狗</a>
+    <a href="http://www.jd.com" v-else>京东</a>
+<!--    动态隐藏或展示标签。渲染开销小-->
+    <p v-show="true">天王盖地虎</p>
+    <p v-show="false">宝塔镇河妖</p>
+</div>
+<script src="vue.js"></script>
+<script>
+    let vm = new Vue({
+        el: '#app',
+        data:function(){
+            return {
+                num:21,
+                // 当num别重新赋值的时候，视图也会发生改变，这就是数据驱动视图 视图的效果都是数据控制的
+                // num:18
+            }
+        }
+    })
+</script>
+
+区别：
+v-show隐藏元素时，使用的是display:none来隐藏的，而v-if是直接从HTML文档中移除元素[DOM操作中的remove]
+```
+
+![image-20231029103509520](assets/image-20231029103509520.png)
+
+
+**v-bind属性控制**
+
+```js
+格式：
+    <标签名 v-bind:标签属性="data属性"></标签名>
+    简写	<标签名 :标签属性="data属性"></标签名>
+
+
+<div id="app">
+<!--    动态标签属性控制-->
+    <p v-bind:name="msg1">hh</p>
+    <p :name="msg2">xixi</p>
+
+</div>
+<script src="vue.js"></script>
+<script>
+    let vm = new Vue({
+        el: '#app',
+        data(){
+            return {
+                msg1: 'hh',
+                msg2: 'xixi',
+            }
+        }
+    })
+</script>
+```
+
+![image-20231029105028293](assets/image-20231029105028293.png)
+
+
+**类值控制**
+
+```js
+     <style>
+        .c1{
+            color:red;
+        }
+        .c2{
+            color:green;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <p :class="{c1:num>10,c2:num<=10}">关掉，通通都关掉</p>
+</div>
+<script src="vue.js"></script>
+<script>
+    let vm = new Vue({
+        el: '#app',
+        data() {
+            return {
+                num:10,
+            }
+        },
+    })
+</script>
+```
+
+![image-20231029142743361](assets/image-20231029142743361.png)
+
+
+
+
+**v-on事件绑定**
+
+```js
+动态显示隐藏wife密码
+<div id="app">
+    <!--    动态显示隐藏wife密码-->
+    <!--    <input v-bind:type="tt"><button v-on:click="show">{{msg}}</button>-->
+    <!--    简写-->
+    <input :type="tt"><button @click="show">{{msg}}</button>
+</div>
+<script src="vue.js"></script>
+<script>
+    let vm = new Vue({
+        el: '#app',
+        data(){
+            return {
+                tt:'password',
+                msg:'显示密码',
+            }},
+        methods:{
+            show(){
+                //methods声明的方法中this 指向当前vue对象
+                if (this.tt==='password'){
+                    this.tt='text';
+                    this.msg='隐藏密码'
+                }else{
+                    this.tt='password';
+                    this.msg='显示密码'
+                }
+            }
+    }
+    })
+</script>
+```
+
+![image-20231029134248377](assets/image-20231029134248377.png)
+![image-20231029134338545](assets/image-20231029134338545.png)
+
+```js
+直接操作计算属性
+<div id="app">
+    <!--    直接操作数据属性-->
+    <button @click="num++">+1</button>
+    <h1>{{num}}</h1>
+</div>
+<script src="vue.js"></script>
+<script>
+    let vm = new Vue({
+        el: '#app',
+        data() {
+            return {
+                num:1,
+            }
+        }
+    })
+```
+
+![image-20231029135121606](assets/image-20231029135121606.png)
+
+
+**商品加减案例**
+
+```js
+<div id="app">
+    <!--    直接操作数据属性-->
+    <button @click="num++">+1</button>
+    <input type="text" :value="num"></input>
+    <!--    复杂点的数据处理可以用方法-->
+    <button @click="down">-1</button>
+</div>
+<script src="vue.js"></script>
+<script>
+    let vm = new Vue({
+        el: '#app',
+        data() {
+            return {
+                num:1,
+            }
+        },
+        methods:{
+            down(){
+                if (this.num>0){
+                    this.num--
+                }
+            }
+        }
+    })
+</script>
+```
+
+![image-20231029140334530](assets/image-20231029140334530.png)
+
+
+**v-model 双向数据绑定**
+
+```js
+<div id="app">
+    <!--    数据驱动视图，v-model后双向数据绑定，视图数据改变vue对象的数据也保持一致-->
+    <input type="text" v-model="num">
+    <h1>{{num}}</h1>
+</div>
+<script src="vue.js"></script>
+<script>
+    let vm = new Vue({
+        el: '#app',
+        data() {
+            return {
+                num:1,
+            }
+        },
+    })
+</script>
+```
+
+![image-20231029141548938](assets/image-20231029141548938.png)
+
+
+**v-for 循环**
+
+```js
+<head>  
+<style>
+        .c1{
+            background-color: tan;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <ul>
+        <!--        key 必须是唯一标识-->
+        <li v-for="(value,index) in hobby_list" :key="index">{{value}}--{{index}}</li>
+<!--        1. 在写v-for的时候，都需要给元素加上一个key属性-->
+<!--        2. key的主要作用就是用来提高渲染性能的！-->
+<!--        3.key属性可以避免数据混乱的情况出现 （如果元素中包含了有临时数据的元素，如果不用key就会产生数据混乱）-->
+    </ul>
+    <ul>
+        <li v-for="(value,index) in info" :key="index">{{value}}--{{index}}</li>
+    </ul>
+    <table border="1">
+        <thead>
+        <tr>
+            <th>商品</th>
+            <th>价格</th>
+        </tr>
+        </thead>
+        <tbody>
+            <tr v-for="(value,index) in goods" :key="index" :class="{c1:value.price>60}">
+                <td>{{value.name}}</td>
+                <td>{{value.price}}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+<script src="vue.js"></script>
+    <script>
+
+        var card = new Vue({
+            el:"#app",
+            data(){
+                return {
+                    hobby_list:[
+                        '抽烟','喝酒','烫头'
+                    ],
+                    info:{
+                        name:'刘栋',
+                        age:18,
+                        sex:'男'
+                    },
+                    goods:[
+                    {"name":"python入门","price":150},
+                    {"name":"python进阶","price":100},
+                    {"name":"python高级","price":75},
+                    {"name":"python研究","price":60},
+                    {"name":"python面向监狱编程","price":110},
+                   ],
+                }
+            },
+        });
+    </script>
+```
+
+![image-20231029152333660](assets/image-20231029152333660.png)
+
+
+
+
+**过滤器**
+
+```js
+全局 Vue.filter('函数名',function(){})
+局部 filters
+对原本数据进行一些处理
+
+<body>
+<div id="app">
+    <h1>{{price.toFixed(3)}}</h1>
+    <!-- 传递多个参数  管道符左边的数据作为第一个参数-->
+    <h1>{{price|keep_two_point(1)}}</h1>
+    <h1>{{price|RMB}}</h1>
+    <!-- 连续使用多个过滤器 -->
+    <h1>{{price|keep_two_point(2)|RMB}}</h1>
+</div>
+</body>
+<script src="vue.js"></script>
+    <script>
+        //全局过滤器
+        Vue.filter('RMB',function(val){
+            return val+'元'
+        })
+
+        var card = new Vue({
+            el:"#app",
+            data(){
+                return {
+                    price:100
+                }
+            },
+            //局部过滤器 作用在vue对象控制的标签范围内
+            filters:{
+                keep_two_point(val,n){
+                    //保留几位小数
+                    return val.toFixed(n)
+                }
+            }
+        });
+    </script>
+```
+
+![image-20231029154317149](assets/image-20231029154317149.png)
+
+
+
+
+**计算属性**
+
+```js
+computed	计算属性
+    
+<body>
+<div id="app">
+    <h1>{{show}}</h1>
+</div>
+</body>
+<script src="vue.js"></script>
+    <script>
+        var card = new Vue({
+            el:"#app",
+            data(){
+                return {
+                    name:'汪峰',
+                    sex:'42',
+                    status:'又要开演唱会了'
+                }
+            },
+            computed:{
+                show(){
+                    return this.name+this.status
+                }
+            }
+        });
+    </script>
+```
+
+![image-20231029154930020](assets/image-20231029154930020.png)
+
+
+
+
+**监听属性**
+
+```js
+watch	监听属性，属性发生改变时触发
+
+<body>
+<div id="app">
+    <button @click="price++">加钱！</button>
+    <h1>{{price}}</h1>
+    <button @click="info.num++">嵌套加钱！</button>
+    <h1>{{info.num}}</h1>
+</div>
+</body>
+<script src="vue.js"></script>
+<script>
+    var card = new Vue({
+        el: "#app",
+        data: {
+            price: 100,
+            info: {
+                num: 200
+            },
+        },
+        watch: {
+            // price属性发生改变时触发
+            price() {
+                alert('price 发生改变')
+            },
+            // 嵌套属性的正确写法
+            'info.num': function(newVal, oldVal) {
+                alert('num 发生改变')
+            }
+        }
+    });
+</script>
+```
+
+![image-20231029190707269](assets/image-20231029190707269.png)
+![image-20231029190727512](assets/image-20231029190727512.png)
+
+
+
+**用户名长度限制**
+
+```js
+<body>
+<div id="app">
+    <input type="text" v-model="username">
+</div>
+</body>
+<script src="vue.js"></script>
+<script>
+    var card = new Vue({
+        el: "#app",
+        data: {
+            username:''
+        },
+        watch:{
+            username(){
+                if (this.username.length>6){
+                    alert('太长了，不能再加了哦！')
+                    //切片，丢弃多余的数据
+                    this.username=this.username.slice(0,6)
+                }
+            }
+        }
+    });
+</script>
+```
+
+![image-20231029191633159](assets/image-20231029191633159.png)
+
+
+
+**生命周期钩子函数**
+
+```js
+new Vue({
+    el:"#app",
+    data:{
+        username:'liu'
+    },
+    methods:{
+    },
+
+    // vue还未获取到视图和数据属性之前触发的
+    beforeCreate(){
+        console.log('beforeCreate>>>>>>')
+        console.log(this.$el);
+        console.log(this.$data);
+    },
+    // vue对象获取到了数据属性,但是还没有获得视图时触发的
+    created(){
+        console.log('created>>>>>>')
+        console.log(this.$el);
+        console.log(this.$data);
+    },
+
+    // 拿到了视图,但是数据属性挂载到视图之前触发的.
+    beforeMount(){
+        console.log('beforeMount>>>>>>')
+        console.log(this.$el);
+        console.log(this.$data);
+    },
+
+    // 数据属性挂载到视图之后触发的.
+    mounted(){
+        console.log('mounted>>>>>>')
+        console.log(this.$el);
+        console.log(this.$data);
+    },
+    // 重点记住created和mounted,将来我们在这两个方法中来发送获取数据的请求
+});
+```
+
+
+
+**阻止事件冒泡和页面刷新**
+
+```js
+jquery 中阻止冒泡事件子标签方法返回false即可
+
+ <style>
+        .c1{
+            background-color: tan;
+            height: 200px;
+        }
+        .c2{
+            background-color: red;
+            height: 100px;
+            width: 100px;
+        }
+
+    </style>
+<body>
+<div id="app">
+   <div  class='c1' @click="f1">
+    <!--       @click.stop 阻止冒泡事件，不能阻止默认事件-->
+       <div class='c2' @click.stop="f2"></div>
+   </div>
+    <!--       @click.stop.prevent 阻止冒泡事件，且阻止默认事件-->
+    <a href="http://www.baidu.com" @click.stop.prevent="">百度</a>
+</div>
+</body>
+<script src="vue.js"></script>
+<script>
+    var card = new Vue({
+        el: "#app",
+        methods:{
+            f1(){
+                alert('Hello,father!')
+            },
+            f2(){
+                alert('Hello,son!')
+            }
+        }
+    });
+</script>
+```
+
+
+
+## 4.todolist案例
+
+**splice函数**
+
+```python
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
