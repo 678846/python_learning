@@ -823,7 +823,6 @@ watch	监听属性，属性发生改变时触发
 **生命周期钩子函数**
 
 ```js
-钩子函数都在methods声明的方法中
 
 new Vue({
     el:"#app",
@@ -1461,7 +1460,7 @@ djang views.py下
 
 ```js
 步骤
-    1.定义个公交车对象 let bus={}
+    1.定义个公交车Vue对象 let bus=new Vue()
     2.放值 bus.$emit('键','值')
     3.取值 bus.$on('键',(val)=>{val'值'})
 
@@ -1478,6 +1477,7 @@ djang views.py下
 </div>
 <script src="vue.js"></script>
 <script>
+    let bus = new Vue();
     let bro1 = {
         data() {
             return {
@@ -1490,7 +1490,8 @@ djang views.py下
         </div>`,
         methods: {
             xh() {
-                this.$emit('bro1', this.bro1_data)
+                console.log('111')
+                bus.$emit('xx', this.bro1_data)
             }
         },
     }
@@ -1500,15 +1501,14 @@ djang views.py下
                 bro2_data: ''
             }
         },
-        //钩子函数，都在methods中，methods声明的方法this指向当前Vue对象
-        methods: {
-            created() {
-                this.$on('bro1', (val) => {
-                    this.bro2_data = val;
-                })
-            }
+        created() {
+            bus.$on('xx', (val) => {
+                this.bro2_data = val;
+                console.log('222')
+            })
         },
-        template: '<h1>{{bro2_data}}</h1>',
+
+        template: '<h1 style="color:green">{{bro2_data}}</h1>',
     }
     let App = {
         template: `
@@ -1531,26 +1531,115 @@ djang views.py下
 </script>
 </html>
     
-页面渲染完成，created钩子函数已经执行过了
+页面渲染完成，created钩子函数已经执行过了，但是点击依然能传值成功，原因是公交车Vue对象中有监听，一旦放值就会触发取值的动作。
 ```
 
+![image-20231031091708091](assets/image-20231031091708091.png)
+
+
+
+
+## 6.vue-router
+
+```js
+用于单页面导航(SPA)功能。一个html文件通过加载不同的组件来展示不同的页面效果，每个组件加载向后台请求需要的相关数据
+
+使用流程：
+	1.引入vue-router js文件
+	2.建对应的组件
+	3.建路由规则 路由对应组件
+	4.创建vue-router对象并将路由规则交给对象
+	5.在vue对象中挂载vue-router对象
+	6.创建router-link标签来指定路由
+	7.写路由出口 router-view
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>todolist</title>
+</head>
+<body>
+<div id="app">
+    <App></App>
+</div>
+<script src="vue.js"></script>
+<!--1.引入vue-router.js文件-->
+<script src="vue-router.js"></script>
+<script>
+
+    //2.创建对应组件
+    let va = {
+        data() {
+            return {
+                da: '这是home！组件'
+            }
+        },
+        template: `<div>
+            <h1 style="color:red;">{{da}}</h1>
+        </div>`,
+    }
+    let vb = {
+        data() {
+            return {
+                da: '这是index组件！'
+            }
+        },
+        template: '<h1 style="color:green">{{da}}</h1>',
+    }
+    //3.创建路由规则
+    const routes = [
+        {path: "/home/", component: va},
+        {path: "/index/", component: vb}
+    ]
+    //4.创建vue-router对象并将路由规则交给对象
+    let router = new VueRouter({
+        routes,
+    })
+    let App = {
+        template: `
+        <div>
+            <!-- 6.router-link 指定路由-->
+            <router-link to="/home/">首页</router-link>
+            <router-link to="/index/">详情页</router-link>
+
+            <!--7.写路由出口-->
+            <router-view></router-view>
+        </div>
+
+        `,
+    }
+    let vm = new Vue({
+        el: '#app',
+        //5.在vue对象中挂载vue-router对象
+        router,
+        components: {
+            'App': App,
+        }
+    })
+</script>
+</html>
+```
+
+![image-20231031130421242](assets/image-20231031130421242.png)
+![image-20231031130706613](assets/image-20231031130706613.png)
+![image-20231031130737252](assets/image-20231031130737252.png)
+
+
+
+
+## 7.vue-cli 
+
+```js
+day60环境配置和day61上午视频
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+```
 
 
 
