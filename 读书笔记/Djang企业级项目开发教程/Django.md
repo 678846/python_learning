@@ -347,6 +347,7 @@ class BookInfo(models.Model):
 	排序	ordering=[id]  倒序 ordering=[-id]
     	ordering=['字段1','字段2']
 5.verbose_name	显示在后台管理系统页面上，直观可读的表名
+6.verbose_name_plural  后台显示表名的复数形式
 ```
 
 
@@ -524,9 +525,1327 @@ BookInfo.objects.filter(id=1).update(name='武动乾坤')
 2. 将变量视为对象，尝试访问变量的属性或方法（不带括号）
 3. 尝试访问变量的数字索引
 
-**过滤器**
+**过滤器**	对数据进行加工
 
-1. 
+	- 语法格式{{variables|filters:'arg'}}  也可以使用管道符连接多个过滤器{{variabls|filters1|filters2}}
+
+| 常用内置过滤器 | 说明                     |
+| -------------- | ------------------------ |
+| add            | 将参数添加到变量         |
+| cut            | 移除参数指定的字符串     |
+| date           | 给定格式格式化日期       |
+| join           | 给定字符串连接列表的元素 |
+| length         | 返回变量长度             |
+| lower/upper    | 小写/大写                |
+| random         | 返回列表一个随机元素     |
+
+**标签**
+*Djngo模版中属性大于方法*
+
+1. for
+   ```python
+   {% for book in book_list %}
+   <li>book.name</li>
+   {% endfor %}
+   //反向遍历列表
+   {% for obj in list reversed %}
+   {% endfor %}
+   //遍历字典
+   {% for key,value in data.items %}
+       {{ key }}:{{ value }}
+   {% endfor %}
+   ```
+
+2. for ...empty
+   给定数组为空或无法找到时，则显示{%empty%}
+
+   ```python
+   {% for book in book_list %}
+   <li>{{ book.title }}</li>
+   {% empty %}
+       <li>抱歉，图书列表为空</li>
+   {% endfor %}
+   ```
+
+3.  if/elif/else
+   ```python
+   {% if data > 10 %}
+       大于10
+   {% elif data < 10 %}
+       小于10
+   {% else %}
+       等于10
+   {% endif %}
+   ```
+
+4. include
+   *用于加载其他模版*
+
+   ```js
+   {% include template_name %}
+   用with关键字给模版传递变量
+   {% include template_name with person='张三' age=18 %}
+   ```
+
+5. load 
+   加载自定义模版标签和过滤器
+   {%load  name%}
+
+6. now 
+   *显示当前日期*
+   it is {%now ' jS F Y H:i  '%}
+
+7. url 
+   *返回与给定视图和可选参数匹配的绝对路径（不带域名的url）*
+
+   ```js
+   可选参数
+   {% url 'some_url' v1 v2 %}
+   {% url 'some_url' arg1=v1 arg2=v2 %}
+   ```
+
+8. block
+   *定义由子模版覆盖的块*
+
+   ```js
+   {%block 模块名 %}
+   模块内容
+   {% endblock %}
+   ```
+
+9. comment 
+   *添加注释*`
+
+   ```js
+   {%comment %}
+   注释内容
+   {% endcomment %}
+   ```
+
+10. extends
+    *标记当前模板继承的模板*
+
+11. with 为复杂变量名设置别名
+
+    
+
+### 3.3 自定义过滤器和标签
+
+*自定义过滤器和模板通常位于应用目录下的templatetags目录之下的文件，文件内自定义过滤器和标签，使用 load标签加载到模板中*
+
+```python
+from django import template
+
+# 注册器
+register = template.Library()
+
+
+# 自定义过滤器 接受1,2个参数的python函数
+@register.filter
+def example(val, arg):
+    # val 管道符前的数据作为第一个参数
+    return val + arg
+
+
+# 自定义标签 接受任意参数的函数
+@register.simple_tag
+def tag(*args, **kwargs):
+    return args, kwargs
+
+
+# 包含标签 当前模板渲染另一个模板来显示数据,接受任意参数
+@register.inclusion_tag('aa.html')
+def show_tag(*args, **kwargs):
+    dic = {'data1': args, 'data2': kwargs}
+    # 将数据封装成字典传给html，渲染后返回
+    return dic
+
+```
+
+### 3.4 模版继承
+
+*web 网站多个页面往往会包含一些相同的元素，为了避免编写重复代码，django提供模板继承机制，用标签的block和extends实现*
+
+```html
+base.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}页面标题{% endblock %} </title>
+</head>
+<body>
+{% block header %}
+    <h1>标题</h1>
+{% endblock %}
+{% block main %}
+    <h2>页面内容</h2>
+{% endblock %}
+<br><br><br>
+{% block footer %}
+    <div class="footer no-map">
+        <div class="foot_link">
+            <a href="#">关于我们</a>
+            <span>|</span>
+            <a href="#">联系我们</a>
+            <span>|</span>
+            <a href="#">招聘人才</a>
+            <span>|</span>
+            <a href="#">友情链接</a>
+            <span>|</span>
+        </div>
+    </div>
+{% endblock %}
+
+</body>
+<script>
+
+</script>
+</html>
+```
+
+![image-20231106211237975](assets/image-20231106211237975.png)
+
+
+```python
+{#继承base.html模板#}
+{% extends 'base.html' %}
+{% block title %}
+    列表页面
+{% endblock %}
+{% block header %}
+<h1>书单</h1>
+{% endblock %}
+{% block main %}
+    <a href="#">1. 《鲁迅作品集全集》</a><br>
+    <a href="#">2. 《秋雨散文集》</a><br>
+    <a href="#">3. 《黑暗森林》</a><br>
+    <a href="#">4. 《月亮与六便士》</a><br>
+{% endblock %}
+```
+
+![image-20231106211400612](assets/image-20231106211400612.png)
+
+
+## 4. 视图
+
+*载入模版->填充上下文->生成响应消息->返回响应对象*
+
+### 4.1  请求对象
+
+1. request常用属性
+
+   | **request.body**    | **请求体信息，该属性为bytes类型**                            |
+   | ------------------- | ------------------------------------------------------------ |
+   | **request.path**    | **请求页面的完整路径(不包含域名)**                           |
+   | **request.method**  | **本次请求的请求方法**                                       |
+   | **request.GET**     | **包含GET请求的所以参数，是QueryDict对象，有get()方法提取**  |
+   | **request.POST**    | **包含POST请求的所以参数，是QueryDict对象，有get()方法提取** |
+   | **request.COOKIES** | **包含所有cookie信息，是一个字典数据**                       |
+   | **request.session** | **包含当前会话信息，该属性是QueryDict对象**                  |
+   | **request.META**    | **请求头部信息，该属性dict类型**                             |
+
+2. 常用方法
+
+   | **request.get_host**      | **获取ip**                                           |
+   | ------------------------- | ---------------------------------------------------- |
+   | **request.get_port**      | **获取端口**                                         |
+   | **request.get_full_path** | **包含完整参数列表的path    [/music/bands?index=1]** |
+
+   
+
+### 4.2 响应对象
+
+1. 常用属性
+
+   | **response.content**     | **设置响应消息内容，值为字节类型** |
+   | ------------------------ | ---------------------------------- |
+   | **response.charset**     | **设置响应消息的编码方式**         |
+   | **response.status_code** | **设置响应状态码**                 |
+
+2. 常用方法
+
+   | **response.set_cookie(key,value)** | **设置cookie** |
+   | ---------------------------------- | -------------- |
+   | **response.del_cookie(key)**       | **删除cookie** |
+
+   
+
+### 4.3 快速生成响应的对象
+
+|              | 说明                                                   |
+| ------------ | ------------------------------------------------------ |
+| HttpResponse | 传入一个字符串作为页面响应内容                         |
+| JsonResponse | 返回json类型字符串，非dict数据，将参数safe设置为False  |
+| render()     | 结合指定的模板和上下文字典，返回一个渲染的HttpResponse |
+| redirect()   | 出入url和url模式名称                                   |
+
+### 4.4 类视图
+
+*一个类中定义不同的方法，处理以不同请求方式发送的请求*
+*视图类中的as_view()方法，接受请求，获取请求方法，根据请求方法找到对应的视图方法*
+
+### 4.5 案例 基于视图类的商品管理
+
+goods.html
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>商品列表</title>
+</head>
+<body>
+<div>
+    <table id="my_table" cellpadding="1" cellspacing="0" border="1"
+           style="width: 100%;max-width: 100%;margin-bottom:20px;">
+        <caption align="top" style="font-size:26px">商品列表</caption>
+        <thead>
+        <tr>
+            <td>编号</td>
+            <td>名字</td>
+            <td>价格</td>
+            <td>库存</td>
+            <td>销量</td>
+            <td>管理</td>
+        </tr>
+        </thead>
+        <tfoot align="right">
+        </tfoot>
+        <tbody>
+        {% for row in goods %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ row.name }}</td>
+                <td>{{ row.price }}</td>
+                <td>{{ row.stock }}</td>
+                <td>{{ row.sales }}</td>
+                <td><a href="/del_good/{{ row.id }}">删除</a></td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+<form method="post" action="" cellpadding="1" cellspacing="0" border="1">
+
+    <input type="submit" value="添加">
+    商品：<input type="text" name="name">
+    价格：<input type="text" name="price">
+    库存：<input type="text" name="stock">
+    销量：<input type="text" name="sales">
+</form>
+<form method="post" action="/del_good/" cellpadding="1" cellspacing="0" border="1">
+
+    <input type="submit" value="修改">
+    序号：<input type="text" name="num">
+    商品：<input type="text" name="name">
+    价格：<input type="text" name="price">
+    库存：<input type="text" name="stock">
+    销量：<input type="text" name="sales">
+</form>
+</body>
+</html>
+```
+
+urls.py
+```python
+from django.urls import path, re_path
+from app01 import views
+
+urlpatterns = [
+    # 展示和添加
+    path('get_goods/', views.GoodsView.as_view(), name='goods'),
+    #  删除和修改
+    re_path(r'del_good/(?P<gid>\d*)', views.UpdateView.as_view()),
+]
+```
+
+views.py
+```python
+from django.shortcuts import render, redirect
+from django.views import View
+from app01 import models
+# Create your views here.
+
+
+# 展示,添加商品类
+class GoodsView(View):
+    # 展示商品
+    def get(self, request, *args, **kwargs):
+        goods = models.Goods.objects.all()
+        return render(request, 'goods.html', {'goods': goods})
+
+    # 添加商品
+    def post(self, request, *args, **kwargs):
+        data = request.POST.dict()
+        # **data打散机制
+        models.Goods.objects.create(**data)
+        return redirect('goods')
+
+
+# 删除，修改商品类
+class UpdateView(View):
+    # 删除商品
+    def get(self, request, gid):
+        models.Goods.objects.get(id=gid).delete()
+        return redirect('goods')
+
+    # 修改商品
+    def post(self, request, *args, **kwargs):
+        data = request.POST.dict()
+        # 商品序号和数据库的id值不一致
+        goods = models.Goods.objects.all()
+        count = goods.count()
+        # 找到序号对应的位置,用商品个数对应的位置
+        gid=data['num']
+        for i in range(1, count + 1):
+            if int(gid) == i:
+                # 数据库中对应的记录
+                good=goods[i-1]
+                good.name=data['name']
+                good.price=data['price']
+                good.stock=data['stock']
+                good.sales=data['sales']
+                good.save()
+                break
+        return redirect('goods')
+```
+
+models.py
+```python
+from django.db import models
+
+# Create your models here.
+class Goods(models.Model):
+    create_time = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+    update_time = models.DateTimeField(auto_now=True, verbose_name='更新事件')
+    name = models.CharField(max_length=64, verbose_name='名字')
+    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='价格')
+    stock = models.IntegerField(default=0, verbose_name='库存')
+    sales = models.IntegerField(default=0, verbose_name='销量')
+
+    class Meta:
+        db_table = 'tb_goods'
+        verbose_name = '商品'
+        verbose_name_plural=verbose_name
+    def __str__(self):
+        return self.name
+```
+
+![image-20231108200118485](assets/image-20231108200118485.png)
+
+
+
+## 5. 后台管理系统Admin
+
+*Django提供了一个可插拔的后台管理系统，该系统可以从模型中读取元数据，并提供以模型为中心的界面*
+
+### 5.1 认识Admin
+
+1. 进入Admin   http://127.0.0.1:8000/admin/
+   ![image-20231108205829315](assets/image-20231108205829315.png)
+
+2. 创建管理员用户  python manage.py createsuperuser
+   ![image-20231108210245196](assets/image-20231108210245196.png)
+
+3. 设置为中文  settings.py 文件下language_code的值设置为zh-Hans
+   ![image-20231108210438109](assets/image-20231108210438109.png)
+
+
+
+### 5.2 使用Admin
+
+1. 将模型注册到后台管理系统
+   ```python
+   在admin.py下注册Goods模型
+   1.装饰器 语法格式为 @admin.register(模型名)
+   from django.contrib import admin
+   from .models import Goods
+   @admin.register(Goods)
+   class GoodsAdmin(admin.ModelAdmin):
+       pass
+   2.使用admin.site.register(模型名)
+   ```
+
+   ![image-20231108212001671](assets/image-20231108212001671.png)
+
+​		商品时模型元属性 verbose_name定义的数据表名
+
+2. 设置应用名称中文显示
+   ```python
+   首先在应用文件下 __init__.py 文件添加如下配置
+   default_app_config = 'app01.apps.GoodsConfig'
+   然后在app01/apps.py中配置
+   from django.apps import AppConfig
+   class GoodsConfig(AppConfig):
+       name = 'app01'
+       verbose_name = '商品信息'
+   ```
+
+   ![image-20231108213129234](assets/image-20231108213129234.png)
+
+   
+
+3. 管理数据库数据
+   GoodsAdmin类下添加 list_display = ('id', 'create_time', 'update_time', 'name', 'price', 'stock', 'sales')
+   <img src="assets/image-20231108214942909.png" alt="image-20231108214942909" style="zoom:150%;" />
+
+![image-20231108215326673](assets/image-20231108215326673.png)
+![image-20231108215542479](assets/image-20231108215542479.png)
+**数据修改页面**
+![image-20231108215610421](assets/image-20231108215610421.png)
+
+### 5.3 ModelAdmin 选项
+
+*ModelAdmin类主要用于控制模型信息在后台管理系统页面中的展示，包含列表页选项，编辑页选项。*
+
+#### 5.3.1 列表页选项
+
+​	*列表页的显示字段、过滤器、搜索字段，这些选项在应用的admin.py的模型管理类中使用*
+
+1. list_display 选项 
+   控制页面展示的字段，该项的值为元祖或列表类型，可以有模型字段和自定义字段
+
+   ```python
+   1.模型字段
+   list_display=['id','name']
+   list_display=('id','name')
+   
+   2.自定义字段
+   指与模型相关，单并不包含在模型的字段，定义在admin.py文件下的函数，该函数会将模型实例作为参数
+   from django.contrib import admin
+   from .models import Goods
+   
+   @admin.register(Goods)
+   class GoodsAdmin(admin.ModelAdmin):
+       # list_display = ('id', 'create_time', 'update_time', 'name', 'price', 'stock', 'sales')
+       # 添加自定义字段
+       list_display = ('sales_volume',)
+       g = Goods()
+   
+       def sales_volume(self,g):
+           sale_sum = g.price * g.sales
+           return f'{g.name}销售额为：{sale_sum}元'
+   
+       # 设置该字段的功能说明
+       sales_volume.short_description = '商品销售额'
+   ```
+   
+   ![image-20231109114849320](assets/image-20231109114849320.png)
+   
+2. list_display_links  设置以链接形式展示的字段
+
+   ```python
+   list_display_links=('id','name')
+   ```
+
+   ![image-20231109115212768](assets/image-20231109115212768.png)
+
+3. list_filters    
+   开启列表页过滤器，模型字段作为过滤条件，也可以自定义过滤器
+
+   *模型字段进行过滤*
+
+   ```python
+   list_filter=('name',)
+   ```
+
+   <img src="assets/image-20231109115815789.png" alt="image-20231109115815789" style="zoom:80%;" />
+
+​		*自定义过滤器*
+```python
+from django.contrib import admin
+from .models import Goods
+
+# 自定义过滤器
+class DeFilter(admin.SimpleListFilter):
+    # 列表页过滤器的名称
+    title = '商品名称'
+    # 访问路由所携带的参数名称
+    parameter_name = 'filter_name'
+
+    # 设置分类，返回一个二维元组，第一个数查询编号，第二个是过滤器别名元组
+    def lookups(self, request, model_admin):
+        return (
+            ('0', ('高端手机')),
+            ('1', ('中端手机')),
+        )
+
+    # 查询分类数据
+    def queryset(self, request, queryset):
+        if self.value() == '0':
+            return queryset.filter(price__gt=5000)
+        else:
+            return queryset.filter(price__lte=5000)
+
+@admin.register(Goods)
+class GoodsAdmin(admin.ModelAdmin):
+    list_display = ('id', 'create_time', 'update_time', 'name', 'price', 'stock', 'sales')
+    # 将自定义过滤器添加到list_filter
+    list_filter = (DeFilter,)
+```
+
+![image-20231109122936382](assets/image-20231109122936382.png)
+
+4.  list_per_page 
+   *设置每页显示的记录* list_per_page=3
+   ![image-20231109123639255](assets/image-20231109123639255.png)
+
+5. list_editable
+   *设置可编辑的字段*
+   ![image-20231109124017113](assets/image-20231109124017113.png)
+
+6. search_fields 
+   *设置搜索字段*
+   ![image-20231109124223531](assets/image-20231109124223531.png)
+
+7. 动作下拉框
+
+   |                   | 说明                              |
+   | ----------------- | --------------------------------- |
+   | actions_on_top    | 在顶部显示动作下拉框，默认为True  |
+   | actions_on_button | 在底部显示动作下拉框，默认为False |
+
+8. actions 
+   *设置管理员动作*
+
+   ```python
+   from django.contrib import admin
+   from .models import Goods
+   
+   @admin.register(Goods)
+   class GoodsAdmin(admin.ModelAdmin):
+       list_display = ('id', 'create_time', 'update_time', 'name', 'price', 'stock', 'sales')
+       # 将自定义过滤器添加到list_filter
+       search_fields = ('name',)
+   
+       # 定义管理员动作
+       def down(self, request, queryset):
+           pass
+   
+       down.short_description = '下载'
+       # 添加到actions选项
+       actions = ('down',)
+   ```
+
+   ![image-20231109132323153](assets/image-20231109132323153.png)
+
+#### 5.3.2 编辑页选项
+
+1. fields 控制编辑页显示的字段，元组类型
+   fields=('name', 'price')
+   ![image-20231109133316996](assets/image-20231109133316996.png)
+   二维元组形式设置字段分栏显示
+
+   ```python
+   fields = (('name', 'price'), ('stock', 'sales'))
+   ```
+
+   ![image-20231109133451972](assets/image-20231109133451972.png)
+
+ 2. fieldsets  对可编辑字段进行分组
+
+    ```python
+    fieldsets = (
+        ('商品信息', {'fields': ['name', 'sales', 'stock']}),
+        ('商品价格信息', {'fields': ['price']})
+    )
+    ```
+
+    ![image-20231109134033008](assets/image-20231109134033008.png)
+    
+3. readonly_fields
+
+   ```python
+   # 设置字段为只读字段
+   readonly_fields = ('price',)
+   ```
+
+
+   ![image-20231109134431315](assets/image-20231109134431315.png)
+
+
+
+### 5.4 认证和授权
+
+1. 用户管理
+   ![image-20231109135044944](assets/image-20231109135044944.png)
+
+2. 组管理
+   *对用户的权限进行分配和管理，将一个用户加到一个组中，该用户就有了该组所拥有的所以权限*
+   ![image-20231109135506472](assets/image-20231109135506472.png)
+
+3. 权限管理
+
+   **用户权限管理**
+   ![image-20231109140322594](assets/image-20231109140322594.png)
+
+   **组权限管理**
+   ![image-20231109140646875](assets/image-20231109140646875.png)
+
+
+
+## 6. 表单
+
+### 6.1 表单的概述
+
+#### 6.1 .1 在Django中表单定义的方式
+
+1. 在模板中定义表单
+   *form标签可以在html模板文件中定义表单域，表单域可以包含文本域、密码框、隐藏域、多行文本框、单选按钮、复选框、下拉框选择框和文本上传等元素*
+
+   ```html
+   <form action="/your_name/" method="post">
+   	//定义input标签的标注
+       <label for="your_name">Your name</label>
+       <input id="your_name" name="name" type="text" value="{{name}}" >
+       <input type="submit" value="提交">
+   </form>
+   ```
+
+2. 在python文件中定义表单
+
+   ```python
+   from django import forms
+   
+   class NameForm(forms.Form):
+       name = forms.CharField(label='You_name', max_length=100)
+   ```
+
+
+
+#### 6.1.2 Form类的常用字段
+
+*表单类的不同字段会映射为html表单域中的不同控件*
+
+![image-20231110204037739](assets/image-20231110204037739.png)
+
+![IMG_20231110_203941](assets/IMG_20231110_203941.jpg)
+
+#### 6.1.3 字段的通用参数
+
+1. required 设置当前字段是否为必须字段，默认情况，表单的每个字段都是必须字段。
+
+2. label 为字段指定标签
+   ```python
+   name=forms.CharField(label='名字')
+   渲染后的html
+   <label for='your_name'>Your_name:</label>
+   ```
+
+3. initial 为字段设置初始值
+   ```python
+   name=forms.CharField(initial='张三')
+   生成的html
+   <input type='text' name='name' value='张三' required>
+   ```
+
+4.  help_text 指定字段的描述性文本
+5. error_messages 重写字段的错误信息，参数是一个字典
+   
+
+#### 6.1.4 实例化、处理和渲染表单
+
+Django表单从定义到呈现经历的流程：
+
+1. 在应用目录下py文件定义表单类
+2. 在视图中实例化表单，对表单进行处理
+3. 将表单实例传递给模板上下文
+4. 在模板中渲染表单
+
+一般，处理模型时，从数据库中获取实例，处理表单时，需要在视图中实例化表单
+*表单的数据来源*
+
+1. 数据库中的数据
+2. html表单提交的数据
+3. 其他形式的数据：代码中定义的数据
+
+forms.py
+
+```python
+from django import forms
+
+
+class NameForm(forms.Form):
+    name = forms.CharField(label='You_name', max_length=100)
+```
+
+views.py
+
+```python
+from django.http import HttpResponse
+from django.shortcuts import render
+from .forms import NameForm
+
+# Create your views here.
+def get_name(request):
+    # 若是一个get请求，实例化一个空表单
+    if request.method == 'GET':
+        form = NameForm()
+        return render(request, 'name.html', {'form': form})
+    else:
+        # 若是POST请求，创建表单，并将提交的数据实例化NameForm
+        form = NameForm(request.POST)
+        # 验证表单
+        if form.is_valid():
+            # 逻辑处理
+            return HttpResponse('ok')
+```
+
+name.html
+
+```html
+//利用表单生成的不包含form标签
+</form>
+<form method="post" action="/get_name/">
+    {{ form }}
+    <input type="submit" value="提交">
+</form>
+```
+
+渲染后的页面
+![image-20231110212249653](assets/image-20231110212249653.png)
+
+
+
+#### 6.1.5 表单实例形式
+
+1. 绑定形式
+2. 未绑定形式
+
+*表单实例的 **is_bound** 属性可以判断表单实例是否绑定了数据，表单实例中的数据无法被更改，若想更改创建一个新的表单实例覆盖*
+
+#### 6.1.6 表单验证
+
+表单验证即对表单中的数据进行校验，检验表单各个字段的数据是否符合该字段的约束条件，若表单验证成功，验证后的数据会被存储到表单实例的**cleaned_data**属性（dict类型）,若失败抛出异常，在程序中使用验证后的数据有利于提高程序健壮性，需要注意表单验证后，**request.POST**仍然可以访问到用户提交的**未验证**的数据
+
+验证方法：
+
+1. 表单实例的clean()
+2. 表单实例的is_valid()
+3. 访问表单实例的errors属性，第一次被访问时可以触发表单验证
+
+
+
+### 6.2 在模版中渲染表单
+
+将视图上下文变量中传递的表单实例以模板变量的形式放在模板中即可使用 {{form}}
+
+#### 6.2.1  利用表单渲染选项  渲染表单
+
+1. as_table 用法{{form.as_table}}，渲染时表单的每个字段都会被放在<tr>标签中
+2. as_p 用法{{form.as_table}}，渲染时表单的每个字段都会被放在<p>标签中
+3. as_ul 用法{{form.as_table}}，渲染时表单的每个字段都会被放在<li>标签中
+
+#### 6.2.2 手动处理表单字段
+
+*手动处理表单字段可以将每个表单字段视为表单属性*
+
+```html
+<div >
+    {#  表单验证#}
+    {{ form.name.errors }}
+    <label for="{{ form.name.id_for_label }}">You_name</label>
+    {{ form.name }}
+</div>
+```
+
+#### 6.2.3 *渲染表单错误信息*
+
+| 标签                            | 说明                 |
+| ------------------------------- | -------------------- |
+| {{ form.non_field_errors }}     | 显示表单错误信息     |
+| {{ form.name_of_field.errors }} | 显示表单字段错误信息 |
+
+#### 6.2.4 遍历表单字段
+
+当表单字段的每个字段都是用相同的html，可以借助{% for %}标签遍历每个字段
+
+```python
+{% for field in form %}
+<div class="fieldwrapper">
+    {# 用于显示字段的错误信息。如果字段有错误信息，它会将错误信息渲染为HTML#}
+    {{ field.errors }}
+    {#用于显示字段的标签#}
+    {{ field.label_tag }}
+    {#用于显示字段本身#}
+    {{ field }}
+    {#判断是否有帮助性文本#}
+    {% if field.help_text %}
+    <p class="'help">{{ field.help_text|safe }}</p>
+    {% endif %}
+</div>
+{% endfor %}
+```
+
+#### 6.2.5 复用表单
+
+{% include 'form_snippet.html' %}
+
+### 6.3 表单集
+
+表单集是一个多表的集合，利用表单集，用户可以同时提交一组表单，在数据库中添加多条记录
+
+#### 6.3.1 创建表单集
+
+formset_factory()传入一个已定义的表单，可以快速创建一个表单集
+forms.py
+
+```python
+from django import forms
+
+class GoodForm(forms.Form):
+    good_name = forms.CharField(label='商品')
+    good_price=forms.DecimalField(label='价格')
+    good_stock=forms.IntegerField(label='库存')
+    good_sales=forms.IntegerField(label='销量')
+```
+
+views.py
+
+```python
+from django.shortcuts import render
+from .forms import GoodForm
+from django.forms import formset_factory
+
+def get_name(request):
+    # 创建表单集
+    good_formset = formset_factory(GoodForm)
+    formset = good_formset()
+
+    return render(request, 'test.html', {"formset": formset})
+```
+
+test.html
+
+```html
+<table>
+    {% for form in formset %}
+        {{ form }}
+    {% endfor %}
+</table>
+```
+
+![image-20231111095841431](assets/image-20231111095841431.png)
+
+
+#### 6.3.2  管理表单集
+
+*表单集默认值包含一个空表单，为formset_factory()传递参数，可对表单进行管理*
+
+1. 控制空表单的数量
+   extra 控制空表单数量 good_formset = formset_factory(GoodForm,extra=2)
+
+2. 设置表单的初始数据
+   formset = good_formset(initial=[{'good_name': 'iphone', 'good_price': 5999, 'good_stock': '5', 'good_sales': '3'}])
+
+   ![image-20231111100832468](assets/image-20231111100832468.png)
+   
+
+3.  显示表单最大数量 max_num
+
+   *表单的最大数量与**initial**、**extra**、**max_num**取值都有关系*
+
+   - 若max_num 设置为None，那么表单集中最多包含1000张表单
+   - 若初始数据大于max_num,那么max_num的作用就会被忽略
+   - max_num 大于初始数据表示，由三个值共同决定
+
+#### 6.3.3 使用表单集
+
+手动处理
+
+```html
+{#手动处理必须添加#}
+{{ formset.management_form }}
+<table>
+    {% for form in formset %}
+        {{ form }}
+    {% endfor %}
+</table>
+```
+
+自动处理
+
+```html
+<table>
+    {{ formset }}
+</table>
+```
+
+
+
+### 6.4 根据模型创建表单
+
+*如果要构建一个数据库驱动的应用程序，那么很可能用到模型相关的表单*
+
+#### 6.4.1 自定义模型表单类
+
+```python
+from django.forms import ModelForm
+from app01.models import Goods
+
+class GoodForm(ModelForm):
+    class Meta:
+        # 指定了表单所基于的模型类是Goods模型。
+        model = Goods
+        fields = ['name', 'price', 'stock', 'sales']
+        # 1.使用模型类中所有的字段
+        fields = '_all_'
+        # 2.排除不需要出现在表单的模型字段
+        exclude=['stock']
+```
+
+#### 6.4.2 使用模型表单类
+
+forms.py
+
+```python
+from django.forms import ModelForm
+from app01.models import Goods
+
+
+class GoodForm(ModelForm):
+    class Meta:
+        # 指定了表单所基于的模型类是Goods模型。
+        model = Goods
+        fields = '__all__'
+```
+
+views.py
+
+```python
+from django.shortcuts import render
+from .forms import GoodForm
+from app01.models import Goods
+
+
+def get_name(request):
+    # 创建空表单
+    form=GoodForm()
+    # 获取一条记录
+    good=Goods.objects.get(id=1)
+    # 使用good对象填充表单
+    form=GoodForm(instance=good)
+
+    return render(request, 'test.html', {'form': form})
+```
+
+test.html
+```html
+{{ form }}
+```
+
+![image-20231111145928239](assets/image-20231111145928239.png)
+
+#### 6.4.3 ModelForm 的save()
+
+forms.py
+```python
+from django.forms import ModelForm
+from app01.models import Goods
+
+
+class GoodForm(ModelForm):
+    class Meta:
+        # 指定了表单所基于的模型类是Goods模型。
+        model = Goods
+        fields = '__all__'
+```
+
+views.py
+
+```python
+from .forms import GoodForm
+from app01.models import Goods
+
+def get_name(request):
+    f = GoodForm({'name': 'iphone 15 plus', 'price': '6888', 'stock': '8', 'sales': '4'})
+    # 将绑定到表单的数据创建并保存到数据库对象
+    f.save()
+    good = Goods.objects.get(id=1)
+    # instance 接受到一个现有模型实例，更新相关数据
+    f2 = GoodForm({'name': 'realme gt geo5se', 'price': '2000','stock': '1000','sales': '100'},instance=good)
+    f2.save()
+    return HttpResponse('ok')
+```
+
+![image-20231111151634853](assets/image-20231111151634853.png)
+![image-20231111151727365](assets/image-20231111151727365.png)
+
+#### 6.4.4 利用工厂函数定义模型表单类
+
+```python
+from django.shortcuts import render
+from app01.models import Goods
+from django.forms import modelform_factory
+
+
+def get_name(request):
+    # 接受一个模型类和参数，生成给定模型的ModelForm类
+    all_fields = ('name', 'price', 'stock', 'sales')
+    good_form = modelform_factory(Goods, fields=all_fields)
+    return render(request, 'test.html', {'form': good_form})
+```
+
+
+
+#### 6.4.5 利用工厂函数定义表单集
+
+```python
+all_fields = ('name', 'price', 'stock', 'sales')
+good_formset = modelformset_factory(Goods, fields=all_fields)
+```
+
+1. 字段选择
+   参数**fields**和**exclude**选择表单使用的字段
+2. 更改查询集
+   formset=good_formset(queryset=Goods.object.filter(name__startswith='iphone'))
+3. 在表单集中保存对象
+   类似ModelForm，表单集中的数据也可以用save()
+
+
+
+### 6.5 基于表单类的商品管理
+
+urls.py
+
+```python
+from django.urls import path, re_path
+from app02 import views as views
+urlpatterns = [
+    # 展示和添加
+    path('get_goods/', views.GoodView.as_view(), name='goods'),
+    #  删除和修改
+    re_path(r'del_good/(\d*)', views.UpdateDestoryGood.as_view()),
+]
+```
+
+app01/forms.py
+
+```python
+from django.forms import ModelForm
+from app01.models import Goods
+
+class GoodForm(ModelForm):
+    class Meta:
+        # 指定了表单所基于的模型类是Goods模型。
+        model = Goods
+        fields = '__all__'
+```
+
+views.py
+
+```python
+from django.views import View
+from .forms import GoodForm
+from django.http import HttpResponse
+from django.shortcuts import render, redirect
+from app01.models import Goods
+
+class GoodView(View):
+    # 商品视图类
+    def get(self, request):
+        # 展示商品
+        goods = Goods.objects.all()
+        form = GoodForm()
+        return render(request, 'goods.html', {'goods': goods, 'form': form})
+
+    def post(self, request):
+        # 添加商品
+        good = Goods()
+        # 使用post提交的数据实例化GoodForm
+        form = GoodForm(request.POST)
+        # 判断表单是否已验证，获取已验证的数据
+        if form.is_valid():
+            # 验证后的数据都放在实例对象的cleaned_data属性里
+            good_data = form.cleaned_data
+            good.name = good_data["name"]
+            good.price = good_data["price"]
+            good.stock = good_data['stock']
+            good.sales = good_data['sales']
+            try:
+                # 模型实例的save方法
+                good.save()
+            except:
+                return HttpResponse('数据错误')
+        return redirect('goods')
+
+
+class UpdateDestoryGood(View):
+    # 编辑删除商品数据
+    def get(self, request, gid):
+        # 删除数据
+        try:
+            good = Goods.objects.get(id=gid)
+            good.delete()
+        except:
+            return HttpResponse('删除失败')
+        return redirect('goods')
+
+    def post(self, request, *args):
+        # 编辑数据
+        goods = Goods.objects.all()
+        count = goods.count()
+        form = GoodForm(request.POST)
+        # 获取序号
+        num = request.POST.get('num')
+        if form.is_valid():
+            good_data = form.cleaned_data
+            for i in range(1, count + 1):
+                # 找到序号对应的位置
+                if i == int(num):
+                    # 根据索引获取模型实例对象
+                    good = goods[i - 1]
+                    good.name = good_data["name"]
+                    good.price = good_data["price"]
+                    good.stock = good_data['stock']
+                    good.sales = good_data['sales']
+                    try:
+                        # 模型实例的save方法
+                        good.save()
+                    except:
+                        return HttpResponse('编辑失败')
+        return redirect('goods')
+```
+
+goods.html
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>商品列表</title>
+</head>
+<body>
+<div>
+    <table id="my_table" cellpadding="1" cellspacing="0" border="1"
+           style="width: 100%;max-width: 100%;margin-bottom:20px;">
+        <caption align="top" style="font-size:26px">商品列表</caption>
+        <thead>
+        <tr>
+            <td>编号</td>
+            <td>名字</td>
+            <td>价格</td>
+            <td>库存</td>
+            <td>销量</td>
+            <td>管理</td>
+        </tr>
+        </thead>
+        <tfoot align="right">
+        </tfoot>
+        <tbody>
+        {% for row in goods %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ row.name }}</td>
+                <td>{{ row.price }}</td>
+                <td>{{ row.stock }}</td>
+                <td>{{ row.sales }}</td>
+                <td><a href="/del_good/{{ row.id }}">删除</a></td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+<form method="post" action="" cellpadding="1" cellspacing="0" border="1">
+
+    <input type="submit" value="添加">
+    {{ form }}
+</form>
+<form method="post" action="/del_good/" cellpadding="1" cellspacing="0" border="1">
+
+    <input type="submit" value="修改">
+    序号：<input type="text" name="num">
+    {{ form }}
+</form>
+</body>
+</html>
+```
+
+<img src="assets/image-20231111164942993.png" alt="image-20231111164942993" style="zoom: 200%;" />
+
+
+
+## 7.身份验证系统
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -447,7 +447,7 @@ ViewModel：连接视图和数据的视图模型，负责监听Model和View的�
    ![image-20231105214002812](assets/image-20231105214002812.png)
    
 
-## 2.2.3 学生列表案例
+#### 2.2.3 学生列表案例
 
 ```js
 <body>
@@ -473,6 +473,7 @@ ViewModel：连接视图和数据的视图模型，负责监听Model和View的�
         </tbody>
     </table>
 </div>
+</body>
 <script>
     var vm = new Vue({
         el: '#app',
@@ -502,7 +503,7 @@ ViewModel：连接视图和数据的视图模型，负责监听Model和View的�
 ![image-20231105220832507](assets/image-20231105220832507.png)
 
 
-## 2.3 Vue事件
+### 2.3 Vue事件
 
 **常用事件修饰符**
 
@@ -514,40 +515,546 @@ ViewModel：连接视图和数据的视图模型，负责监听Model和View的�
 | .self    | 绑定到自身，只有自身才能触发 |
 | .once    | 事件只触发一次               |
 
+1. stop阻止事件冒泡
+   ```js
+   <body>
+   <div id="app">
+       <div @click="do_parent">
+           <button @click="do_this">事件冒泡</button>
+           <button @click.stop="do_this">阻止事件冒泡</button>
+       </div>
+   </div>
+   </body>
+   <script>
+       var vm = new Vue({
+           el: '#app',
+           methods: {
+               do_parent() {
+                   console.log('我是父元素的单击事件')
+               },
+               do_this() {
+                   console.log('我是被点击的元素事件')
+               }
+           }
+       })
+   </script>
+   ```
+
+   点击冒泡事件
+   ![image-20231106094531639](assets/image-20231106094531639.png)
+   点击阻止事件冒泡
+   ![image-20231106094624380](assets/image-20231106094624380.png)
+
+  2. prevent阻止默认事件行为
+     *阻止<a>默认行为*
+
+     ```js
+     <body>
+     <div id="app">
+         <a href="https://www.baidu.com">百度</a>
+         <!--    阻止默认行为-->
+         <a href="https://www.baidu.com" @click.prevent>百度</a>
+     </div>
+     </body>
+     <script>
+         var vm = new Vue({
+             el: '#app',
+         })
+     ```
+
+3. capture 事件捕获
+   *事件捕获的执行顺序是由外部结构向内部结构执行，与事件冒泡的顺序相反*
+
+   ```js
+   <body>
+   <div id="app">
+       <div @click.capture="do_parent">
+           <button @click="do_this">事件捕获</button>
+       </div>
+   </div>
+   </body>
+   <script>
+       var vm = new Vue({
+           el: '#app',
+           methods: {
+               do_parent() {
+                   console.log('我是父元素的单击事件')
+               },
+               do_this() {
+                   console.log('我是当前的点击事件')
+               }
+           }
+       })
+   </script>
+   ```
+
+   点击捕获后先执行外部的do_parent,后执行内部的do_this
+   ![image-20231106095809286](assets/image-20231106095809286.png)
+
+4. self 自身触发
+   *实现只有DOM元素本身会触发的事件*
+
+   ```js
+    <style>
+           .odiv1 {
+               width: 80px;
+               height: 80px;
+               background: red;
+               margin: 5px
+           }
+   
+           .odiv2 {
+               width: 50px;
+               height: 50px;
+               background: tan
+           }
+       </style>
+   <body>
+   <div id="app">
+       <div class="odiv1" @click.self="do_parent">a
+           <div class="odiv2" @click="do_this">b</div>
+       </div>
+       <div class="odiv1" @click="do_parent">c
+           <div class="odiv2" @click.self="do_this">d</div>
+       </div>
+   </div>
+   
+   <script>
+       var vm = new Vue({
+           el: '#app',
+           methods: {
+               do_parent() {
+                   console.log('我是父元素的单击事件')
+               },
+               do_this() {
+                   console.log('我是当前的点击事件')
+               }
+           }
+       })
+   </script>
+   ```
+
+   点击b时，只有do_this方法执行，点击d时，do_this和do_parent会依次执行
+
+   ![image-20231106102900873](assets/image-20231106102900873.png)
+   
+
+5. once只触发一次
+   阻止事件的多次触发
+
+   ```js
+   <body>
+   <div id="app">
+       <button @click="do_this">多点几次试试</button>
+   </div>
+   <script>
+       var vm = new Vue({
+           el: '#app',
+           methods: {
+               do_this() {
+                   console.log('我只能执行一次哦！')
+               }
+           }
+       })
+   </script>
+   </body>
+   ```
+
+   无论怎么点击只能输出一句
+
+   ![image-20231106103517382](assets/image-20231106103517382.png)
+   
+
+### 2.4 Vue组件
+
+*组件是构成页面中独立结构单元，能够减少重复代码的编写，提高开发效率，使项目易维护，和管理*
+
+#### 2.4.1 全局组件
+
+```js
+<body>
+<div id="app">
+    //使用
+    <my_component></my_component>
+    <my_component></my_component>
+    <my_component></my_component>
+</div>
+</body>
+<script>
+    //全局注册组件,my_component就是组件名称
+    Vue.component('my_component', {
+        //必须是一个函数，是组件的初始数据
+        data() {
+            return {
+                count: 0
+            }
+        }
+        ,
+        //表示组件的模版
+        template: '<button @click="count++">被单击{{count}}次</button>'
+    })
+    var vm = new Vue({
+        el: '#app',
+    })
+</script>
+```
+
+![image-20231106110006431](assets/image-20231106110006431.png)
 
 
+#### 2.4.2 局部组件
+
+局部注册组件，Vue实例的component属性实现
+
+```js
+<body>
+<div id="app">
+    <my_component></my_component>
+    <my_component></my_component>
+    <my_component></my_component>
+</div>
+</body>
+<script>
+    var com={template:'<p>嘿嘿，我是局部组件</p>'}
+
+    var vm = new Vue({
+        el: '#app',
+        //注册局部组件
+        components:{
+            my_component:com
+        }
+    })
+</script>
+```
+
+![image-20231106130938371](assets/image-20231106130938371.png)
 
 
+#### 2.4.3 template模版
+
+*template标签来定义结构的模版，在该标签内写html代码，然后通过id值绑定到组件的template属性上*
+
+**组件模版中只有一个根元素**
+
+```js
+<body>
+<div id="app">
+    <p>{{title}}</p>
+    <!--    使用组件-->
+    <my_component></my_component>
+</div>
+<template id="aa">
+    <p>{{title}}</p>
+</template>
+</body>
+<script>
+    Vue.component('my_component', {
+        //将template标签定位到template属性
+        template:'#aa',
+        //组件初始数据
+        data() {
+            return {title:'我是组件内的title'}
+        }
+    })
+    var vm = new Vue({
+        el: '#app',
+        data() {
+            return {title:'Vue实例的title'}
+        }
+
+    })
+</script>
+```
+
+![image-20231106133546158](assets/image-20231106133546158.png)
 
 
+#### 2.4.4 组件之间的数据传递
+
+*组件实例具有局部作用域，组件之间的数据传递需要借助一些工具*
+
+1. 父组件向子组件传递数据，单向数据流传输，父级的数据更新到子级，反过来就不行
+   ```js
+   <body>
+   <div id="app">
+       <p>{{num}}</p>
+       <!--    向子组件传递数据-->
+       <my_component :num="num"></my_component>
+   </div>
+   </body>
+   <script>
+       Vue.component('my_component', {
+           //props接受父组件的数据，同时num和data绑定，当data数据发生改变时，组件num值夜会发生改变
+           props: ['num'],
+           template: `<div>
+       子组件修改数据<input type="text" v-model="num">
+       <p>子组件{{num}}</p>
+           </div>
+   `})
+       var vm = new Vue({
+           el: '#app',
+           data() {
+               return {num: '200'}
+           }
+       })
+   </script>
+   ```
+
+   子组件数据的变动影响不到父级
+   ![image-20231106140356689](assets/image-20231106140356689.png)
+
+​		修改父级数据，单向数据流传递影响到子级
+​		![image-20231106140841089](assets/image-20231106140841089.png)
+
+2. 子组件向父组件传值
+
+   $emit 能够将子组件的值传递到父组件，可以触发父组件中定义的事件，数据通过传递参数完成
+
+   ```js
+   <body>
+   <div id="app">
+       <parent></parent>
+   </div>
+   <template id="child">
+       <div>
+           <button @click="send">send 传递数据</button>
+           <input type='text' v-model="msg">
+       </div>
+   </template>
+   </body>
+   <script>
+       //注册父组件
+       Vue.component('parent', {
+           data() {
+               return {msg: ''};
+           },
+           template: `
+       <!-- 定义父组件绑定的事件-->
+           <div >父组件接受到的数据:{{msg}}
+   <!--        使用子组件-->
+           <child @child_send="recv"></child>
+           </div>`,
+           methods: {
+               recv(val) {
+                   console.log(111);
+                   this.msg = val
+               }
+           }
+       })
+       //注册子组件
+       Vue.component('child', {
+           template: '#child',
+           data() {
+               return {msg: '子组件的数据'}
+           },
+           methods: {
+               send() {
+                   //触发父组件定义的事件
+                   this.$emit('child_send', this.msg);
+               }
+           }
+       })
+   
+   
+       var vm = new Vue({
+           el: '#app',
+       })
+   </script>
+   ```
+
+   ![image-20231106145219102](assets/image-20231106145219102.png)
+   ![image-20231106145247766](assets/image-20231106145247766.png)
+
+  3. 兄弟组件传值
+     定义一个公交车vue对象，$emit 放值 $on 取值
+
+     ```js
+     <body>
+     <div id="app">
+         <div><bro1></bro1>
+         <bro2></bro2></div>
+     </div>
+     </body>
+     <script>
+         //定义一个Vue实例
+         var bus=new Vue();
+     
+         //注册bro1
+         Vue.component('bro1', {
+             data() {
+                 return {msg: ''};
+             },
+             template: `
+             <div >接受bro2的数据:{{msg}}</div>`,
+             //created 页面挂载之前执行
+             created() {
+                 //this.msg=bus.$on('hh') 会出先循环引用的问题，使用bus.$on('hh')监听事件时，Vue会返回一个取消监听的函数
+                 //取值
+                 bus.$on('hh', (val) => this.msg = val)
+             }
+         })
+     
+         //注册bro2
+         Vue.component('bro2', {
+             template: '<button @click="send">send to bro1</button>',
+             data() {
+                 return {msg: '嘿嘿来自bro2的数据'}
+             },
+             methods: {
+                 send() {
+                     //放值
+                     bus.$emit('hh', this.msg);
+                 }
+             }
+         })
+         
+         var vm = new Vue({
+             el: '#app',
+         })
+     </script>
+     ```
+
+     ![image-20231106152452788](assets/image-20231106152452788.png)
+     
+
+### 2.5 Vue的生命周期
+
+*vue实例为生命周期提供了回调函数，在特定情况下触发，贯穿vue实例化的整个过程，这给用户在不同阶段添加自己的代码提供了机会，创建实例、页面挂载、数据更新、销毁实例*
+
+#### 2.5.1 钩子函数
+
+| 钩子          | 说明                 |
+| ------------- | -------------------- |
+| beforeCreate  | 创建实例对象之前执行 |
+| created       | 创建实例对象之后执行 |
+| beforeMount   | 页面挂载成功之前执行 |
+| mounted       | 页面挂载成功后执行   |
+| beforeUpdate  | 组件更新之前执行     |
+| updated       | 组件更新之后执行     |
+| beforeDestroy | 实例销毁之前执行     |
+| destroyed     | 实例销毁之后执行     |
+
+#### 2.5.2 实例创建
+
+```js
+<body>
+<div id="app"></div>
+</body>
+<script>
+    var vm = new Vue({
+        el: '#app',
+        data: {
+            msg:'张三'
+        },
+        beforeCreate(){
+            console.log('实例创建之前');
+            console.log(this.$data.msg);
+        },
+        created(){
+            console.log('实例创建之后');
+            console.log(this.$data.msg);
+        }
+    })
+</script>
+```
+
+![image-20231106154937760](assets/image-20231106154937760.png)
 
 
+#### 2.5.3 页面挂载
+
+*vue实例创建之后，如果挂载点el存在，就会进行页面挂载*
+
+```js
+<body>
+<div id="app">{{msg}}</div>
+</body>
+<script>
+    var vm = new Vue({
+        el: '#app',
+        data: {
+            msg:'张三'
+        },
+        beforeMount(){
+            console.log('页面挂载之前');
+            //获取el的DOM元素
+            console.log(this.$el.innerHTML);
+        },
+        mounted(){
+            console.log('页面挂载之后');
+            //获取el的DOM元素
+            console.log(this.$el.innerHTML);
+        }
+    })
+</script>
+```
+
+![image-20231106155410673](assets/image-20231106155410673.png)
 
 
+#### 2.5.4 数据更新
 
+*vue实例挂载后，数据发生变化*
 
+```js
+<body>
+<div id="app">
+    <!-- ref给标签指定一个引用标识-->
+    <div v-if="is_show" ref="div">test</div>
+    <!-- 每次点击都会修改is_show的值-->
+    <button @click="is_show=!is_show">更新一下</button>
+</div>
+</body>
+<script>
+    var vm = new Vue({
+        el: '#app',
+        data: {
+            is_show: true
+        },
+        beforeUpdate(){
+            console.log('更新之前');
+            //获取div标签
+            console.log(this.$refs.div);
+        },
+        updated(){
+            console.log('更新之后');
+            //获取div标签
+            console.log(this.$refs.div);
+        }
+    })
+</script>
+```
 
+点击俩下输出的结果
+![image-20231106160735918](assets/image-20231106160735918.png)
 
+#### 2.5.5 实例销毁
 
+```JS
+<body>
+<div id="app">
+    {{msg}}
+</div>
+</body>
+<script>
+    var vm = new Vue({
+        el: '#app',
+        data: {
+            msg:'张三'
+        },
+        beforeDestroy(){
+            console.log('实例销毁之前');
+            console.log(vm);
+        },
+        destroyed(){
+            console.log('实例销毁之后');
+            console.log(vm);
+        }
+    })
+</script>
+```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+![image-20231106161626392](assets/image-20231106161626392.png)
 
 
 
