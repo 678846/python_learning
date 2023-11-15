@@ -233,6 +233,7 @@ urlpatterns = [
 
 
 
+
 ## 2.模型
 
 ### 2.1 定义与使用模型
@@ -1441,7 +1442,6 @@ test.html
 
    ![image-20231111100832468](assets/image-20231111100832468.png)
    
-
 3.  显示表单最大数量 max_num
 
    *表单的最大数量与**initial**、**extra**、**max_num**取值都有关系*
@@ -1769,79 +1769,453 @@ goods.html
 
 ## 7.身份验证系统
 
+### 7.1 User对象
 
+*User对象是身份验证系统的核心，它代表了与网站交互的人员*
 
+1. 用户信息相关的常用字段
 
+![IMG_20231112_165443](assets/IMG_20231112_165443.jpg)
 
+![IMG_20231112_165305](assets/IMG_20231112_165305.jpg)
 
+2. 创建用户
 
+```python
+from django.http import HttpResponse
+from django.contrib.auth.models import User
 
+def create_user(self):
+    # 创建普通用户 create_user()
+    ordinary_user = User.objects.create_user(username='baron', password='baron123')
+    ordinary_user.save()
 
+    # 创建超级用户 create_superuser()
+    super_user = User.objects.create_superuser(username='Tom', password='tom123')
+    super_user.save()
+    return HttpResponse('ok')
+```
 
+<img src="assets/image-20231112192801726.png" alt="image-20231112192801726" style="zoom:150%;" />
 
+3. User对象的set_password()方法修改用户密码
 
+   ```python
+   user=User.objects.get(username='Tom')
+   # 修改密码
+   user.set_password('Tom123')
+   # 保存
+   user.save()
+   ```
 
+4 验证用户 authenticate()
+urls.py
 
+```python
+from django.urls import path, re_path
+from User_hh import views as views
 
+urlpatterns = [
+    path('create_user/', views.LoginView.as_view()),
+]
+```
 
+User_hh/views.py
 
+```python
+from django.contrib.auth import authenticate
+from django.shortcuts import render
+from django.views import View
+from django.http import HttpResponse
+# Create your views here.
+from django.contrib.auth.models import User
+from .forms import UserTest
+
+class LoginView(View):
+    def get(self, request):
+        form = UserTest()
+        return render(request, 'login.html', {'form': form})
+
+    def post(self, request):
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        # 接受用户名和密码，验证成功返回User对象,否则None
+        status = authenticate(username=username, password=password)
+        if status is not None:
+            return HttpResponse('登录成功')
+        else:
+            return HttpResponse('登录失败')
+```
+
+User_hh/forms.py
+
+```python
+from django import forms
+
+
+class UserTest(forms.Form):
+    username = forms.CharField(max_length=100,label="Your name")
+    # forms.PasswordInput 控件来隐藏密码
+    password = forms.CharField(widget=forms.PasswordInput,label="Password")
+```
+
+login.html
+
+```html
+<form action="" method="post">
+    {{ form }}
+    <input type="submit" value="提交">
+</form>
+```
+
+![image-20231112211054151](assets/image-20231112211054151.png)![image-20231112211113941](assets/image-20231112211113941.png)
+
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+### 7.2 权限和权限管理
+
+#### 7.2.1  默认权限
+
+*Django内置了一个简单的权限系统，该系统为每个Django模型创建增、删、改、查四种权限*
+<img src="assets/image-20231113091659485.png" alt="image-20231113091659485" style="zoom:150%;" />
+
+1. has_perm()
+   *检查用户是否具有模种权限   has_perm('应用名.权限名_模型名')*
+
+2. get_all_permissions()
+   *查看用户的所有权限，返回值是当前权限的集合*
+
+#### 7.2.2 权限管理
+
+1. 用户权限管理
+
+   *Django内指的权限类模型是Permission，User类与Permission类存在多对多关系，通关系字段属性user_permission对用户权限进行管理*
+
+   | 方法                                          | 说明         |
+   | --------------------------------------------- | ------------ |
+   | user.user_permissions.set([permission_list])  | 添加权限列表 |
+   | user.user_permissions.add(permission1,...)    | 添加权限     |
+   | user.user_permissions.remove(permission1,...) | 移除权限     |
+   | user.user_permissions.clear()                 | 清空权限     |
+
+   ```python
+   from django.contrib.auth.models import User, Permission
+   
+   # 获取添加用户的权限
+   del_perm = Permission.objects.get(codename='delete_user')
+   # 获取删除用户的权限
+   add_perm = Permission.objects.get(codename='add_user')
+   
+   # 对当前管理员Tom操作
+   user = User.objects.get(username='Tom')
+   # 添加权限
+   user.user_permissions.add(add_perm)
+   # 移除权限
+   user.user_permissions.remove(del_perm)
+   # 清空权限
+   user.user_permissions.clear()
+   ```
+
+2. 组权限管理
+
+   | 方法                                      | 说明           |
+   | ----------------------------------------- | -------------- |
+   | group.permissions.set([permission_list])  | 添加组权限列表 |
+   | group.permissions.add(permission1,...)    | 添加组权限     |
+   | group.permissions.remove(permission1,...) | 移除组权限     |
+   | group.permissions.clear()                 | 清空组权限     |
+
+   ```python
+   from django.contrib.auth.models import Permission, Group
+   
+   # 创建组
+   group = Group.objects.create(name="Python")
+   group.save()
+   # 给Python组分配权限
+   # 获取添加用户的权限
+   del_perm = Permission.objects.get(codename='delete_user')
+   # 获取删除用户的权限
+   add_perm = Permission.objects.get(codename='add_user')
+   # 添加
+   group.permissions.add(del_perm)
+   # 删除
+   group.permissions.remove(add_perm)
+   group.clear()
+   ```
+
+3. 用户加入组
+
+   | 方法                           | 说明                       |
+   | ------------------------------ | -------------------------- |
+   | user.groups.set([group_list])  | 将用户添加到列表的所以组中 |
+   | user.groups.add(group1,...)    | 将用户添加到多个组         |
+   | user.groups.remove(group1,...) | 将用户从指定的组删除       |
+   | user.groups.clear()            | 用户退出所有的组           |
+
+   ```python
+   from django.contrib.auth.models import Permission, Group,User
+   
+   user=User.objects.get(username='Tom')
+   group=Group.objects.get(name='Python')
+   # 添加用户到组
+   user.groups.add(group)
+   # 从Python组中移除用户
+   user.groups.remove(group)
+   # 用户退出所有组
+   user.groups.clear()
+   ```
+
+#### 7.2.3 自定义权限
+
+1. 使用模型中的Meta类的permissions属性自定义权限
+
+   ```python
+   from django.db import models
+   class Author(models.Model):
+       ...
+       class Meta:
+           # codename 表示权限名 name 表示的是对权限的描述
+           permissions = (
+               (codename1,name1),
+               ('publish_article', 'can Publish Article'),
+           )
+   ```
+
+2. 使用ContentType类自定义权限
+
+   ```python
+   from django.contrib.auth.models import Permission
+   from django.contrib.contenttypes.models import ContentType
+   
+   # 通过ContentType类提供的get_for_model 获取到模型类实例
+   content_type=ContentType.objects.get_for_model(Author)
+   # 通过Permission类提供的create()为模型添加方法
+   permission=Permission.objects.create(
+       codename='publish_article',
+       name='can publish Article',
+       content_type=content_type
+   )
+   ```
+
+### 7.3 Web请求认证
+
+#### 7.3.1 用户的登录和请求
+
+```python
+from django.contrib.auth import authenticate, login,logout
+from django.shortcuts import render
+from django.views import View
+
+# Create your views here.
+class UserView(View):
+    # 用户登录 本质是将一个已验证的用户附加到当前会话
+    def post(self,request):
+        username= request.POST.get('username')
+        password= request.POST.get('password')
+        user= authenticate(request,username=username,password=password)
+        if user is not None:
+            # 将用户信息存入到Session会话中，第一个接受请求对象request，第二个是User对象
+            login(request,user)
+            return render(request,'index.html',{'username':username})
+        else:
+            return render(request,'login.html',{'account_error':'用户名密码错误'})
+        
+    # 退出登录
+    def get(self,request):
+        # 当前会话session中存储的登录数据会被清除，接受请求对象
+        logout(request)
+        return render(request,'login.html')
+```
+
+#### 7.3.2 限制用户访问
+
+1. request.user.is_authenticated属性来判断用户是否登录
+
+2. 装饰器@login_required()
+
+   ```python
+   @login_required(login_url='/login/', redirect_field_name='my_redirect')
+   # login_url 重定向地址   redirect_field_name 重定向字段名称
+   ```
+
+   login_url会优先在装饰器设置的重定向地址，没有的话在settings.py 中查找 LOGIN_URL
+
+3. LoginView类 必须在最左侧 
+
+   ```python
+   class LoginView(LoginRequiredMixin, View):
+       # 重定向地址
+       login_url = '/login/'
+   
+       def get(self):
+           return render('/login')
+   ```
+
+### 7.4 模版和身份验证
+
+*当前用户实例和其权限会被保存在模板变量的user和perm中，在模板中可使用这俩个变量验证用户和用户权限*
+
+1. 验证用户
+
+
+   ```html
+   {% if user.is_authenticated %}
+   欢迎你 {{ user.username }}
+   {% else %}
+   <a href="/login/">注册</a>
+   {% endif %}
+   ```
+
+2. 验证权限
+
+   ```html
+   检测当前登录用户是否有管理应用的area的所有权限
+   {% if perms.area %}
+   {% endif %}
+   检测是否有具体的权限
+   {% if perms.area.add_address %}
+   {% endif %}
+   ```
+
+### 7.5 自定义用户模型
+
+*自定义用户模型需要继承抽象类AbstractUser，在模型类自定义额外的字段*
+
+```python
+from django.db import models
+from django.contrib.auth.models import AbstractUser
+
+class User(AbstractUser):
+    # 自定义用户模型类
+    name = models.CharField(max_length=20, verbose_name='名字')
+    phone = models.CharField(max_length=11, verbose_name='手机号码')
+
+    class Meta:
+        db_table = 'tb_user'
+        verbose_name = '用户'
+        verbose_name_plural = verbose_name
+    
+setting.py
+指向自定义用户模型类
+AUTH_USER_MODEL="应用名.模型名"
+```
+
+### 7.6 状态保持
+
+#### 7.6.1 Cookie
+
+*状态保持，服务器产生，保存在浏览器的键值对*
+
+1. 设置cookie
+   set_cookie()
+
+   ```python
+    def set_cookie(self, key, value='', max_age=None, expires=None, path='/',
+                      domain=None, secure=False, httponly=False, samesite=None):
+           
+   key:表示Cookie的名称        
+   value:表示Cookie的值
+   max_age:表示Cookie的过期时间，以s为单位
+   expires：表示Cookie的过期时间
+   domain:表示Cookies生效的域名
+   ```
+
+   ![image-20231113153528455](assets/image-20231113153528455.png)
+   
+2. 读取Cookie 
+
+   ```python
+   def show_cookie(request):
+       cookie = request.COOKIES.get('Python')
+       return HttpResponse(f'Cookie的值为{cookie}')
+   ```
+
+   ![image-20231113153933381](assets/image-20231113153933381.png)
+   
+3. 删除cookie
+
+   ```python
+   def delete_cookie(request):
+       response = HttpResponse('删除成功')
+       response.delete_cookie('Python')
+       return response
+   ```
+
+   ![image-20231113154634615](assets/image-20231113154634615.png)
+   
+
+#### 7.6.2 Session
+
+*Session数据存储在服务端，但是使用依赖于Cookie，服务器启用Session时会在浏览器Cookie中存储一个键为sessionid的Cookie数据，浏览器每次发起请求时都会把这个数据发送给服务器，服务器接受到请求后，会根据sessionid找到请求者对应的Session数据*
+
+1. Session 操作
+   django通过request对象的session属性管理会话信息
+
+   | 操作                               | 说明                                              |
+   | ---------------------------------- | ------------------------------------------------- |
+   | request.session['键']='值'         | 以键值对的形式写入session                         |
+   | request.session.get('键','默认值') | 读取session                                       |
+   | request.session.set_expiry(value)  | 设置session过期时间                               |
+   | session.flush()                    | 将session的缓存中的数据与数据库同步               |
+   | session.clear()                    | 清除session中的缓存数据（不管缓存与数据库的同步） |
+
+   set_expiry()单位s，value=0时，表示会话在用户关闭浏览器时过期，value=None，当前会话使用全局会话过期策略
+   
+2. 写入session
+   settings.py
+
+   ```python
+   CACHES = {
+       'default': {
+           'BACKEND': 'django_redis.cache.RedisCache',
+           'LOCATION': 'redis://localhost:6379/0',  # Redis 服务器的连接信息
+           'OPTIONS': {
+               'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+           }
+       }
+   }
+   SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+   SESSION_CACHE_ALIAS = 'default'
+   ```
+
+   views.py
+
+   ```python
+   from django.http import HttpResponse
+   # Create your views here.
+   def set_session(request):
+       request.session['Python'] = 'Django'
+   
+       return HttpResponse('session写入成功！')
+   ```
+
+   ![image-20231113204655882](assets/image-20231113204655882.png)
+   
+
+   ![image-20231113204912246](assets/image-20231113204912246.png)
+   
+3. 读取session数据
+
+   ```python
+   def get_session(request):
+       session=request.session.get('Python')
+       return HttpResponse(f'python对应的值为{session}')
+   ```
+
+   ![image-20231113205037805](assets/image-20231113205037805.png)
+
+4. 删除session
+
+   ```python
+   def delete_session(request):
+       request.session.flush()
+       return HttpResponse('删除成功！')
+   ```
+
+
+   ![image-20231113205442187](assets/image-20231113205442187.png)
+
+​	
 
 
 
