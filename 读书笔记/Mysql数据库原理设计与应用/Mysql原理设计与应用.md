@@ -31,6 +31,7 @@
 
 
 
+
 ### 1.2 数据表操作
 
 #### 1.2.1 创建数据表
@@ -61,7 +62,6 @@ create table [if not exists] 表名(字段名 字段类型 [字段属性]...) [�
    多表修改	 rename table 旧表名1 to 新表名1 [, 旧表名2 to 新表名2]
 
    ![image-20231114165536971](assets/image-20231114165536971.png)
-   
    
 2. 修改表选项
    alter table 表名 表选项[=]值
@@ -546,7 +546,6 @@ select 字段列表 from 数据表 [where 条件判断] group by 字段名;
 
    ![image-20231117221057947](assets/image-20231117221057947.png)
    
-   
 3. 统计筛选
    having 和 where 都是根据条件进行数据筛选，但也有一定的区别
 
@@ -569,7 +568,7 @@ select 字段列表 from 数据表 [where 条件判断] group by 字段名;
 
    ![image-20231118152007151](assets/image-20231118152007151.png)
    
-
+   
    
    ```sql
    select 字段1 [as] 别名1，字段2 [as] 别名2[,...] from 表名 [as] 表别名
@@ -662,7 +661,6 @@ select 字段列表 from 数据表 [where 条件判断] group by 字段名;
    俩者均可以用于比较数据是否相同，而<=>可以对null值进行比较
 
    ![image-20231118142010682](assets/image-20231118142010682.png)
-   
    
 4. between ... and ...
    ```sql
@@ -813,7 +811,6 @@ INSERT INTO employee (id, name, department_id) VALUES
 
    ![image-20231119165156638](assets/image-20231119165156638.png)
    
-   
 2. 内连接 
    *根据匹配条件返回匹配成功的记录*
 
@@ -865,7 +862,6 @@ INSERT INTO employee (id, name, department_id) VALUES
    ```
 
    ![image-20231119202010464](assets/image-20231119202010464.png)
-   
    
 4. 右外连接
    返回右表中所有记录以及左表中符合连接条件的记录。当右表的某行记录在左表中没有匹配的记录时，将左表中相关的记录设置为null
@@ -923,7 +919,6 @@ INSERT INTO employee (id, name, department_id) VALUES
 
    ![image-20231119211945483](assets/image-20231119211945483.png)
    
-   
 2. 列子查询
    指的是子查询返回的结果是一个字段符合条件的所有数据，即一列多行。
 
@@ -940,7 +935,6 @@ INSERT INTO employee (id, name, department_id) VALUES
 
    ![image-20231119212821639](assets/image-20231119212821639.png)
    
-   
 3. 行子查询
    指的是子查询是一条包含一行多个字段的记录。
 
@@ -956,7 +950,6 @@ INSERT INTO employee (id, name, department_id) VALUES
    ```
 
    ![image-20231119220914859](assets/image-20231119220914859.png)
-   
    
 4. 表子查询
    返回的结果用于from数据源，它是一个符合二维表结构的数据，可以有一行一列，一行多列，一列多行或多行多列
@@ -994,7 +987,6 @@ INSERT INTO employee (id, name, department_id) VALUES
    ```
 
    ![image-20231120092909877](assets/image-20231120092909877.png)
-   
    
 2. any 关键字查询
    表示给定的判断条件，只要符合any子查询结果的任意一个就返回1，否则0。
@@ -1192,7 +1184,6 @@ desc mysql.user;
 
    ![image-20231121205321673](assets/image-20231121205321673.png)
    
-
 4. 资源限制字段
    以**max_**开头，保存用户可使用服务器资源的限制
 
@@ -1254,7 +1245,6 @@ create user 语句的选项
 
    ![image-20231121215702265](assets/image-20231121215702265.png)
    
-
 3. 同时创建多个用户
    ```sql
    create user
@@ -1264,11 +1254,9 @@ create user 语句的选项
 
    ![image-20231121215852530](assets/image-20231121215852530.png)
    
-
 4. 设置用户可操作资源范围
    ![image-20231121220125264](assets/image-20231121220125264.png)
-
-
+   
    ```sql
    --创建用户，限制每小时最多跟新10次
    create user
@@ -1279,12 +1267,629 @@ create user 语句的选项
    select max_updates from mysql.user
    where user='test5';
    ```
-
+   
    ![image-20231121221339324](assets/image-20231121221339324.png)
 
 
 
 5. 设置密码期限的用户
+   ![image-20231122145906373](assets/image-20231122145906373.png)
+
+   *password expire 表示用户登录之后，执行sql 语句之前，需要重置密码，否则就会报错*
+
+   ```sql
+   创建一个密码为180天更改一次的用户
+   create user 'test6'@'localhost' identified by '666666'
+   password expire interval 180 day;
+   ```
+
+   ![image-20231122150454894](assets/image-20231122150454894.png)
+   
+6. 设置用户是否锁定
+   ```sql
+   create user 'test7'@'localhost' 
+   identified by '777777'
+   password expire account lock;
+   
+   查看对应的字段。
+   select account_locked from mysql.user where user='test7';
+   ```
+
+   ![image-20231122151200311](assets/image-20231122151200311.png)
+   已锁定的账户不能连接到mysql服务器
+   ![image-20231122151404275](assets/image-20231122151404275.png)
+
+
+
+#### 6.2.2 设置密码
+
+*创建用户时可设置密码，也可以为没有密码的用户，密码过期的用户或指定用户修改密码*
+
+```sql
+alter user 账户名 identified by '明文密码';
+```
+
+1. 为指定用户设置密码
+   ```sql
+   alter user 'test1'@'%' identified by '123456';
+   ```
+
+   ![image-20231122151853073](assets/image-20231122151853073.png)
+   
+2. 为登录用户设置密码
+   ```sql
+   alter user user() identified by '000000';
+   alter user current_user() identified by '678846';
+   ```
+
+   ![image-20231122152219959](assets/image-20231122152219959.png)
+   
+3. mysqladmin 修改密码
+   ```sql
+   mysqladmin -u 用户名 [-h 主机地址] -p password 新密码
+   
+   主机地址省略时，默认使用localhost
+   password是关键字，不是旧密码。
+   ```
+
+   
+
+root密码丢失找回：在mysql配置文件my.ini中添加***skip-grant-tables***，重启mysql服务，利用root用户登录可以跳过密码直接登录，然后为root用户设置密码
+
+
+
+#### 6.2.3 修改用户
+
+```sql
+alter user [if not exists]
+账户名 [用户身份验证选项] [,账户名 [用户身份验证选项]]...
+[with 资源控制选项] [密码管理选项] [账户锁定选项]
+```
+
+1. 修改验证插件
+   ```sql
+   alter user test1
+   identified with sha256_password by '111111'
+   password expire;
+   ```
+
+   ![image-20231122154025030](assets/image-20231122154025030.png)
+   
+2. 解锁用户
+   ```sql
+   alter user 'test7'@'localhost' account unlock;
+   ```
+
+   ![image-20231122154149264](assets/image-20231122154149264.png)
+   test7 @ localhost 登录成功
+
+   ![image-20231122154315546](assets/image-20231122154315546.png)
+   
+3. 修改用户资源限定
+   ```sql
+   限定单个用户同时最多建立俩个连接
+   alter user 'test2'@'localhost' identified by '222222'
+   with max_user_connections 2;
+   ```
+
+   ![image-20231122154812317](assets/image-20231122154812317.png)
+
+
+
+4. 为用户重命名
+   ```sql
+   rename user
+   旧用户名1 to 新用户名1,旧用户名2 to 新用户名2,旧用户名3 to 新用户名3...
+   ```
+
+   ![image-20231122155155435](assets/image-20231122155155435.png)
+   
+
+#### 6.2.4 删除用户
+
+```sql
+drop user [if exists] 账户名 [,账户名]
+```
+
+```sql
+drop user if exists test7;
+
+如果省略主机地址，默认为’%‘
+```
+
+*如果删除当前用户，该用户的会话不会被自动关闭，只有在用户关闭会话后，删除操作才会生效，再次登录的话就会失败，另外已删除的用户创建的数据库或对象不会因此而失效*
+![image-20231122160507717](assets/image-20231122160507717.png)
+
+
+
+
+
+### 6.3 权限管理
+
+#### 6.3.1 授予权限
+
+权限信息根据其***作用范围***，分别存储在mysql数据库不同的数据表中，mysql启动时自动加载权限信息，并读取到内存中。
+
+![image-20231122161050752](assets/image-20231122161050752.png)
+
+```sql
+grant 
+权限类型 [字段列表]   [,权限类型 [字段列表] ]...
+on [目标类型] 权限级别
+to 账户名 [身份验证选项]  [,账户名 [身份验证选项]]
+[with {grant option | 资源控制选项}]
+
+目标类型 默认是table
+grant option 表示当前用户可以为其他用户授权
+```
+
+查看用户授权情况
+```sql
+show grants [for 账户]
+
+all privileges： 表示除了 grant option (授权权限)和 proxy(代理权限)外的所有权限
+usage ：表示没有任何权限
+```
+
+![image-20231122162745219](assets/image-20231122162745219.png)
+
+为用户授权
+
+```sql
+grant select , insert (name,price) 
+on my_db.sh_goods
+to 'test1'@'%';
+
+select 是表级权限
+insert 是列级权限
+```
+
+![image-20231122165102516](assets/image-20231122165102516.png)
+到对应表中查看权限
+
+```sql
+表权限
+select db,table_name,table_priv,column_priv 
+from mysql.tables_priv where user='test1';
+
+列权限
+select db,table_name,column_name,column_priv 
+from mysql.columns_priv where user='test1';
+```
+
+![image-20231122165652106](assets/image-20231122165652106.png)
+
+
+#### 6.3.2 回收权限
+
+```sql
+revoke 权限类型 [(字段列表)]   [,权限类型 [(字段列表)] ]...
+on [目标类型] 权限级别 
+from 账户名 [,账户名]...
+```
+
+回收权限
+```sql
+revoke insert(name,price)
+on my_db.sh_goods
+from 'test1'@'%';
+
+回收用户的name,price字段插入权限
+```
+
+![image-20231122191117171](assets/image-20231122191117171.png)
+一次回收所有权限
+
+```sql
+回收所有权限以及可为其他用户授权的权限
+revoke all [privileges],grant option from 账户名 [,账户名]...
+```
+
+
+
+#### 6.3.3 刷新权限
+
+*刷新权限指的是从系统数据库mysql中的权限表重新加载用户的权限，原因在于grant、create user操作会将服务器的缓存信息保存到内存中，而revoke、drop操作并不会同步到内存中。*
+
+```sql
+flush privileges;
+```
+
+![image-20231122193703909](assets/image-20231122193703909.png)
+
+
+
+
+
+
+## 7. 视图
+
+### 7.1 初识视图
+
+#### 7.1.1 视图的概念和使用
+
+*视图是从一个表或多个表导出来的表，是一种虚拟存在的表，表的**结构和数据**都依赖于基本表*
+
+```sql
+查询数据
+select id,name,price,price*0.8 from sh_goods limit 3;
+
+创建view_goods视图
+create view view_goods as 
+select id,name,price,price*0.8 from sh_goods limit 3;
+
+查看视图
+select * from view_goods;
+
+删除视图
+drop view view_goods;
+```
+
+![image-20231123161751568](assets/image-20231123161751568.png)
+
+**查询视图的注意点**: select 字段列表和 where 等子句中的字段，只能使用创建视图时select指定的字段
+![image-20231123162146981](assets/image-20231123162146981.png)
+
+使用视图与直接操作基本表相比，优点：
+
+1. 简化查询语句。
+2. 安全性。使特定的用户只能查询或修改他们所能见到的数据
+3. 逻辑数据独立性。视图可以屏蔽真实表结构变化带来的影响 
+
+
+
+#### 7.1.2 创建视图的语法格式
+
+```sql
+create [or replace] 
+[definer={user|current_user}]
+[sql security {definer|invoker}]
+view view_name [(column_list)]
+as select_statement
+[with [cascade|local] check option ]
+
+or replace :表示替换已有的视图
+definer ：定义视图的用户，和安全控制有关，默认为当前用户
+sql security ：视图的安全控制
+	- defner 默认 定义者指定的用户的权限来执行
+	- invoker 调用视图的用户的权限来执行
+	
+view_name :创建的视图名称
+column_list:指定视图中的各个列名称
+with check option ：视图数据操作时的检查条件
+	- cascade ：操作数据时满足所有相关视图和表定义的条件
+	- local： 操作数据时满足视图本身定义的条件
+```
+
+注意点：
+
+1. 默认情况下，新建的视图保存在当前选择的数据库中，若要明确指定某个数据库创建视图，可以把视图名称写为‘*数据库名.视图名*’
+2. show tables; 语句包含创建的视图。
+3. 在同一个数据库中，视图名称不能和已存在的表名相同。
+
+
+
+### 7.2 视图管理
+
+#### 7.2.1 创建视图
+
+1. 在多表上创建视图
+   *除了在单表上创建视图，还可以在俩个或俩个以上的基本表上创建视图*
+
+   ```sql
+   create view view_e_p as 
+   select e.id,e.name as e_name,d.name as depart_name from employee as e 
+   inner join department as d
+   on e.department_id = d.id;
+   ```
+
+   ![image-20231123185055277](assets/image-20231123185055277.png)
+
+
+
+2. 自定义列名称
+
+   ```sql
+   create view view_goods_p (sn,title,pro_price)
+   as select id,name,price*0.8 from sh_goods;
+   
+   查看视图
+   select * from view_goods_p;
+   ```
+
+   自定义列名称的数量必须与as select字段列表的数量一致，顺序与as select 字段列表顺序一致
+
+   ![image-20231123190607141](assets/image-20231123190607141.png)
+   
+3. 视图安全控制
+   ```sql
+   创建测试用户，创建的用户没有任何权限
+   create user shop_test;
+   
+   创建第一个视图，权限控制使用默认值，definer为当前用户root，sql security为definer
+   create view view_goods_t1 as
+   select id,name from sh_goods limit 1;
+   
+   创建第二个视图，definer设置为shop_test，sql security为definer
+   create definer='shop_test' view  view_goods_t2 as
+   select id,name from sh_goods limit 1;
+   
+   创建第三个视图，definer为 root用户 设置 sql security 为invoker
+   create sql security invoker view  view_goods_t3 as 
+   select id,name from sh_goods limit 1;
+   
+   为shop_test 用户赋予前面创建的3个视图的select权限
+   grant select on view_goods_t1 to 'shop_test';
+   grant select on view_goods_t2 to 'shop_test';
+   grant select on view_goods_t3 to 'shop_test';
+   ```
+
+   用*shop_test*用户登录，该用户的权限
+   ![image-20231123194805286](assets/image-20231123194805286.png)
+
+   *root* 用户有表sh_goods的select权限，而*shop_test* 没有表sh_goods的select权限
+
+   ![image-20231123194352429](assets/image-20231123194352429.png)
+
+
+
+#### 7.2.2 查看视图
+
+1. 查看视图字段信息
+   ```sql
+   desc view_goods;
+   ```
+
+   ![image-20231123195525023](assets/image-20231123195525023.png)
+   
+2. 查看视图状态信息
+   ```sql
+   show table status like 'view_goods'\G;
+   ```
+
+   ![image-20231123195702515](assets/image-20231123195702515.png)
+   
+3. 查看视图的创建语句
+   ```sql
+   show create view view_goods \G;
+   ```
+
+   ![image-20231123200038217](assets/image-20231123200038217.png)
+   
+
+#### 7.2.3 修改视图
+
+*当基本表中的某些字段发生变化时，视图必须修改才能使用*
+
+1. 替换已有的视图
+   ```sql
+   create or replace view view_goods 
+   as select id,name from sh_goods;
+   
+   查看结果
+   desc view_goods;
+   ```
+
+   ![image-20231123200659360](assets/image-20231123200659360.png)
+   
+2. 使用alter view修改视图
+   ```sql
+   alter [or replace] 
+   [definer={user|current_user}]
+   [sql security {definer|invoker}]
+   view view_name [(column_list)]
+   as select_statement
+   [with [cascade|local] check option ]
+   ```
+
+   修改视图view_goods
+   ```sql
+   alter view view_goods 
+   as select id from sh_goods;
+   查看修改结果
+   desc view_goods;
+   ```
+
+   ![image-20231123201019361](assets/image-20231123201019361.png)
+   
+
+#### 7.2.4 删除视图
+
+**删除视图时，不会删除基本表中的数据**
+
+```sql
+drop view [if exists] view_name [,view_name]...
+```
+
+![image-20231123203158118](assets/image-20231123203158118.png)
+
+
+
+
+### 7.3 视图数据操作
+
+*因为视图是一个虚拟的表，不保存数据，当通过视图操作数据时，实际上操作的是基本表中的数据*
+
+
+
+#### 7.3.1 添加数据
+
+```sql
+create view view_employee as
+select id,name,department_id from employee;
+
+insert into view_employee values(12,'刘华强',3);
+```
+
+![image-20231123203919716](assets/image-20231123203919716.png)
+
+*注意一下情况，操作可能失败：*
+
+- 操作的视图定义在多个表上
+- 没有满足视图的基本表对字段的约束条件
+- 在定义视图的select语句后的字段使用了数学表达式或聚合函数、distinct、union、group by、having等子句
+
+
+
+#### 7.3.2 修改数据
+
+通过视图修改基本表中的数据
+
+```sql
+update view_employee set name='张大炮' where id=12;
+```
+
+![image-20231123204900730](assets/image-20231123204900730.png)
+
+
+#### 7.3.3 删除数据
+
+通过视图删除基本表中的数据
+```sql
+delete from view_employee where id=12;
+```
+
+![image-20231123205022952](assets/image-20231123205022952.png)
+
+
+#### 7.3.4 视图检查条件
+
+***with check option*** 用于在视图数据操作时进行的条件检查
+
+```sql
+创建第一个视图
+create view view_e_t1 as 
+select id,name from employee where id >15;
+
+创建第二个视图,使用级联检查 with check option 相当于 with cascade check option
+create view view_e_t2 as 
+select id,name from view_e_t1 where id<20
+with check option;
+
+插入数据
+insert view_e_t2 values(14,'张飞');
+insert view_e_t2 values(21,'赵云');
+insert view_e_t2 values(19,'王大锤');
+
+创建第三个视图，使用local非级联检查
+create view view_e_t3 as
+select id,name from employee
+with local check option;
+
+插入数据
+insert view_e_t3 values(16,'张三丰');
+insert view_e_t3 values(21,'赵云');
+```
+
+![image-20231123211449563](assets/image-20231123211449563.png)
+
+![image-20231123211646193](assets/image-20231123211646193.png)
+
+
+*默认情况下使用**cascade**，表示级联检查，若设为**local**，则检查定义视图本身的条件*
+
+![image-20231123211849434](assets/image-20231123211849434.png)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
