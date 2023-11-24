@@ -10,6 +10,7 @@
 创建数据库
 <img src="assets/image-20231114155049820.png" alt="image-20231114155049820" style="zoom:150%;" />
 
+
 如果数据库已经存在，程序就会报错，可以添加 if not exists
 ![image-20231114155451856](assets/image-20231114155451856.png)
 
@@ -1794,54 +1795,358 @@ insert view_e_t3 values(21,'赵云');
 
 
 
+## 8. 事务
+
+### 8.1 事务处理
+
+*事务处理在数据开发过程中非常资源，可以保证在同一个事务中的操作具有同步性*
+
+#### 8.1.1 事务的概念
+
+*事务*：就是针对数据库的一组操作，它可以由一条或多条sql语句组成，且每个sql语句是相互依赖；事务的执行要么成功要么返回到事务开始前的状态，保证同一事务的同步性和数据的完整性。
+
+**事务的特点**：
+
+1. 原子性：指的是一个事务被视为一个不可分割的最小工作单元，只有事务中所有的数据库操作都执行成功，整个事务才算成功
+2. 一致性：处理事务时，无论执行成功还是失败，都要保证数据库系统的一致性
+3. 隔离性：一个事务执行时，不受其他事务的影响。
+4. 持久性：事务一旦提交，对数据库的修改就是永久性的
+
+
+
+#### 8.1.2 事务的基本操作
+
+默认情况下，用户执行每一条sql语句都会*被当做单独的事务自动提交*
+
+```sql
+开启事务
+start transaction
+
+手动提交事务
+commit
+
+回滚，即取消事务
+rollback
+只能回滚未提交的事务，已提交的事务无法回滚
+```
+
+开启事务并提交
+
+```sql
+查看用户数据
+select name,price from user; 
+
+开启事务
+start transaction;
+
+alex 减少100元
+update user set price=price-100 where name='alex';
+
+bill增加100元
+update user set price=price+100 where name='bill';
+
+提交事务
+commit;
+```
+
+![image-20231124160128842](assets/image-20231124160128842.png)
+回滚
+
+```sql
+查看用户数据
+select name,price from user; 
+
+开启事务
+start transaction;
+
+alex 减少100元
+update user set price=price-100 where name='alex';
+
+bill增加100元
+update user set price=price+100 where name='bill';
+
+查看用户数据
+select name,price from user; 
+
+回滚，取消事务
+rollback;
+```
+
+![image-20231124161059731](assets/image-20231124161059731.png)
+
+
+*注意*：
+
+- mysql事务不允许嵌套，若执行start transaction语句上一个事务还未提交，会隐式执行提交操作。
+- 事务主要针对的是*数据表中数据的处理*，删除数据库、数据表、修改表结构等操作会隐式提交事务。
+
+
+
+#### 8.1.3 事务的保存点
+
+*在回滚事务时，事务内所有操作都将被撤销。若只希望撤销一部分，可以使用保存点来实现*
+
+```sql
+设置保存点
+savepoint 保存点名;
+
+将事务回滚到指定的保存点
+rollback to savepoint 保存点名;
+
+删除保存点
+release savepoint 保存点名;
+```
+
+***注意***: 一个事务中可以创建多个保存点，在提交事务之后，*事务中的保存点就会被删除*；另外，回滚到某个保存点后，*该保存点之后创建的保存点都会消失。*
+
+```sql
+查看数据
+select name,price from user where name='alex';
+
+开启事务
+start transaction;
+
+将alex扣除100元
+update user set price=price-100 where name='alex';
+
+创建保存点
+savepoint t1;
+
+在扣除alex 50元
+update user set price=price-50 where name='alex';
+
+查看数据
+select name,price from user where name='alex';
+
+回滚到保存点t1
+rollback to savepoint t1;
+
+查看数据
+select name,price from user where name='alex';
+
+回滚事务
+rollback;
+```
+
+![image-20231124163850348](assets/image-20231124163850348.png)
 
 
 
 
+### 8.2 事务的隔离级别
+
+***数据库是一个多用户的共享资源**，mysql允许多线程并发访问，因此用户可以通过不同的线程执行不同的事务，为了保证事务之间不受影响，对事务设置隔离级是十分重要的*
+
+#### 8.2.1 查看隔离级别
+
+```sql
+查看全局隔离级别,影响的是所有连接mysql的用户
+select @@global.transaction_isolation;
+
+查看当前会话隔离级别，只影响当前登录mysql的用户
+select @@session.transaction_isolation;
+
+查看下一个事务的隔离级别，对当前用户下一个事务操作有影响
+select @@transaction_isolation;
+```
+
+![image-20231124194234837](assets/image-20231124194234837.png)
+
+
+#### 8.2.2 修改隔离级别
+
+```sql
+set [session|global] transaction isolation level 参数值
+
+session 表示的是当前会话
+global 表示全局
+省略表示设置下一个事务的隔离级别
+
+
+修改当前会话事务的隔离级别
+set session transaction isolation level read uncommitted ;
+
+查看是否修改成功
+select @@session.transaction_isolation;
+```
+
+![image-20231124195929310](assets/image-20231124195929310.png)
 
 
 
 
+#### 8.2.3 *mysql* 四种隔离级别
+
+1. read uncommitted(读取未提交)
+   *是事务中最低的级别，在该级别下的事务可以读取到其他事务中未提交的数据，这种读取方式就是脏读。*
+   *脏读*就是一个事务中读取了另外一个事务未提交的数据
+
+   ```sql
+   将客户端B隔离级别设置为 read uncommitted
+   set session transaction isolation level read uncommitted;
+   
+   
+   在客户端B查看bill当前金额
+   select name,price from user where name='bill';
+   ```
+
+   ![image-20231124201634543](assets/image-20231124201634543.png)
+   
+
+   ```sql
+   在客户端A中开启事务，并执行转账操作
+   start transaction;
+   
+   update user set price=price-100 where name='alex';
+   update user set price=price+100 where name='bill';
+   
+   客户端A未提交事务，客户端B查询余额，会查看到金额已经增加了
+   select name,price from user where name='bill';
+   ```
+
+   ![image-20231124202326369](assets/image-20231124202326369.png)
+
+
+   ```sql
+   避免脏读，可以将客户端B隔离级别设置为read committed(或更高级别)
+   set session transaction isolation level read committed;
+   
+   客户端B查看余额
+   select name,price from user where name='bill';
+   ```
+
+   ![image-20231124202626746](assets/image-20231124202626746.png)
+   
 
 
 
+2. read committed (读取提交)
+   *在该隔离级别下只能读取其他事务已经提交的数据，避免脏读数据的现象，但是会出现不可重复读的问题*
+   *不可重复读*：指的是一个事务中多次查询的结果不一致 ，原因是查询过程中数据发生了改变。
+
+   ```sql
+   客户端B
+   set session transaction isolation level read committed;
+   开启事务
+   start transaction;
+   查看alex
+   select name,price from user where name='alex';
+   
+   客户端A
+   update user set price=price-100 where name='alex';
+   
+   客户端B
+   select name,price from user where name='alex';
+   ```
+
+   ![image-20231124205553247](assets/image-20231124205553247.png)
+
+
+   避免不可重复读
+   ```sql
+   将客户端B的隔离级别设置为 repeatable read
+   set session transaction isolation level repeatable read;
+   
+   开启事务
+   start transaction;
+   查看alex
+   select name,price from user where name='alex';
+   
+   客户端A
+   update user set price=price+100 where name='alex';
+   
+   客户端B
+   select name,price from user where name='alex';
+   ```
+
+   ![image-20231124210805618](assets/image-20231124210805618.png)
+
+​	
+
+3. repeatable read (可重复读取)
+   *解决了脏读和不可重复读的问题，也可以解决幻读(虚读),是指在一个事务内俩次查询中数据条数不一致，与不可重复读有些类似。*
+   *幻读是由于其他事务做了插入记录的操作，导致记录数有所增加*
+
+   演示幻读
+   ```sql
+   将客户端B隔离级别设置为read committed
+   set session transaction isolation level read committed;
+   开启事务
+   start transaction;
+   查看总额
+   select sum(price) from user;
+   
+   客户端A 插入一条记录
+   insert user (name,price) values('tom',1000);
+   
+   客户端B
+   select sum(price) from user ;
+   
+   提交事务
+   commit;
+   ```
+
+   ![image-20231124213901433](assets/image-20231124213901433.png)
+
+   避免幻读
+   ```sql
+   将客户端B隔离级别设置为repeatable read
+   set session transaction isolation level repeatable read;
+   
+   开启事务
+   start transaction;
+   查看总额
+   select sum(price) from user;
+   
+   客户端A 插入一条记录
+   insert user (name,price) values('d',1000);
+   
+   客户端B
+   select sum(price) from user ;
+   
+   提交事务
+   commit;
+   ```
+
+   ![image-20231124214333525](assets/image-20231124214333525.png)
 
 
 
+4. serializable (可串行化)
+   *可串行化是最高级别的隔离级，他在每个读的数据行上加锁，使之不会发生冲突，解决了脏读、不可重复读和幻读的问题。但是可能出现超时和锁竞争的现象，因此是性能最低的隔离级别*
+
+   演示可串行化
+   ```sql
+   将客户端B隔离级别设置为可串行化
+   set session transaction isolation level serializable;
+   
+   开启事务
+   start transaction;
+   
+   客户端B
+   select name,price from user;
+   
+   
+   客户端A
+   将alex加100元
+   update user set price=price+100 where name='alex';
+   ```
+
+   若客户端B一直未提交事务，客户端A操作一直等待，直至出现超时现象
+   ```sql
+   查看锁等待时间
+   select @@innodb_lock_wait_timeout;
+   ```
+
+   ![image-20231124220434308](assets/image-20231124220434308.png)
+
+   ![image-20231124220552536](assets/image-20231124220552536.png)
+
+   **总结**：当一个事务使用了**可串行化隔离级别**，在这个事务没有提交之前，其他会话只能等到当前操作完成后，才能进行操作。
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+## 9.数据库编程
 
 
 
