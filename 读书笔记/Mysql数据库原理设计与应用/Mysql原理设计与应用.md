@@ -2016,7 +2016,7 @@ select @@session.transaction_isolation;
    ```
 
    ![image-20231124202626746](assets/image-20231124202626746.png)
-   
+
 
 
 
@@ -2150,53 +2150,980 @@ select @@session.transaction_isolation;
 
 
 
+### 9.1 函数
+
+#### 9.1.1 自定义函数
+
+**函数**: 一段用于完成特定功能的代码
+*mysql 一旦遇到语句结束符就会自动执行，但函数是一个整体，只有在被调用时才会被执行，在定义函数时就需要临时修改语句结束符*
+
+```sql
+修改语句结束符
+
+delimiter $$
+	自定义函数
+$$
+
+修改回来
+delimiter ;
+```
+
+
+
+1. 自定义函数语法
+   ```sql
+   create function 函数名 ([参数名 数据类型,...]) returns 返回值类型
+   [begin]
+   	函数体
+   	return 返回值数据
+   [end]
+   
+   begin ... end
+   关键字中间可以包含零条或多条sql语句，常应用在自定义函数、存储过程、触发器或事件中
+   ```
+
+   自定义say_hello函数
+   ```sql
+   delimiter $$
+   
+   create function say_hello(name varchar(30)) returns varchar(50)
+   	begin
+   		return concat('hello',name,'!');
+   	end
+   	$$
+   	
+   delimiter ;
+   ```
+
+   ![image-20231126163716307](assets/image-20231126163716307.png)
+   
+2. 查看函数
+   ```sql
+   查看函数创建语句
+   show create function say_hello\G;
+   ```
+
+   ![image-20231126164040602](assets/image-20231126164040602.png)
+
+   查看函数状态
+   ```sql
+   show function status like 'say_hello'\G;
+   ```
+
+   ![image-20231126164144633](assets/image-20231126164144633.png)
+
+
+
+3. 调用函数
+   ```sql
+   select 函数名1(实参列表),函数名2(实参列表),...
+   ```
+
+   ![image-20231126164438273](assets/image-20231126164438273.png)
+   
+4. 删除函数
+   ```sql
+   drop function [if exists] 函数名;
+   ```
+
+   ![image-20231126164548194](assets/image-20231126164548194.png)
+   
+
+
+
+### 9.2 存储过程
+
+**存储过程**是一组完成特定功能的sql语句集，在第一次使用经过编译后，再次调用就不需要重复编译，因此执行效率高
+
+#### 9.2.1 存储过程的创建与执行
+
+1. 创建存储过程
+   ```sql
+   delimiter 新结束符号
+   
+   create procedure 过程名字 ( [{in|out|inout} 参数名称 参数类型] )
+   	begin
+   	过程体
+   	end
+   新结束符号
+   
+   delimiter ;
+   
+   in: 默认值，表示输入参数，传入的数据可以是直接数据或者保存数据的变变量
+   out：输出参数，初始值为null
+   inout：输入输出参数
+   ```
+
+   ```sql
+   delimiter $$
+   
+   create procedure proc(in sid int)
+   	begin 
+   	 	select id,name from sh_goods where id >sid;
+   	end
+   	$$
+   
+   delimiter ;
+   ```
+
+   ![image-20231126165807384](assets/image-20231126165807384.png)
+   
+2. 查看存储过程
+
+   查看存储过程创建语句
+
+   ```sql
+   show  create procedure proc\G;
+   ```
+
+   ![image-20231126170157504](assets/image-20231126170157504.png)
+   查看存储过程状态
+
+   ```sql
+   show procedure status like 'proc'\G;
+   ```
+
+   ![image-20231126170310925](assets/image-20231126170310925.png)
+   
+3. 调用存储过程
+   ```sql
+   call 存储名称([参数列表])
+   ```
+
+   ![image-20231126172333200](assets/image-20231126172333200.png)
+   
+
+#### 9.2.2 存储过程的修改与删除
+
+```sql
+alter procedure 存储名称 [特征];
+```
+
+![image-20231126172647485](assets/image-20231126172647485.png)
+
+存储过程修改
+
+```sql
+alter procedure proc
+sql security invoker 
+comment '从商品表中获取大于指定ID值的数据';
+```
+
+![image-20231126172857742](assets/image-20231126172857742.png)
+
+
+
+存储过程删除
+```sql
+drop procedure [if exists] 存储过程名称;
+```
+
+![image-20231126173111635](assets/image-20231126173111635.png)
+
+
+#### 9.2.3 存储过程的错误处理
+
+1. 自定义错误名称
+   ```sql
+   declare 错误名称 condition for 错误类型
+   ```
+
+   sqlstate '4200'服务器错误
+
+   ```sql
+   delimiter $$
+   
+   create procedure proc()
+   	begin
+   		declare command_not_allow condition for sqlstate '42000';
+   	end
+   	$$
+   	
+   delimiter ;
+   ```
+
+   ![image-20231126174917813](assets/image-20231126174917813.png)
+
+
+
+2. 错误处理程序
+   ```sql
+   declare 错误处理方式 handle 
+   for 错误类型[,错误类型]
+   程序语句段
+   
+   
+   错误类型：可以是 declare ... condition for语句声明的错误名称
+   
+   错误处理方式
+   continue ：遇到错误不处理，继续执行
+   exit	：遇到错误马上退出
+   
+   程序语句段：遇到定义的错误时，需要执行的存储过程代码段
+   ```
+
+   主键冲突示例
+   ```sql
+   delimiter $$
+   
+   create procedure proc_demo()
+    begin 
+    	declare continue handler for sqlstate '23000'
+    	set @num=1;
+    	insert employee values(11,'李世民',3);
+    	select @num;
+    	set @num=2;
+    	select @num;
+    	insert employee values(11,'李世民',3);
+    	select @num;
+    	set @num=3;
+    	select @num;
+    end
+    $$
+    
+   delimiter ;
+   ```
+
+   ![image-20231126214116370](assets/image-20231126214116370.png)
+
+
+
+### 9.3 变量
+
+**根据变量的作用范围可以划分为系统变量、会话变量、局部变量。**
+
+#### 9.3.1 系统变量
+
+*系统变量也可称为全局变量，指的就是mysql系统内部设置的变量，对所有mysql客户端都有效。*
+
+1. 查看系统所有变量
+   ```sql
+   show [ global | session ] variables
+   [like '匹配模式' | where 表达式]
+   
+   global 显示全局系统变量值
+   session 默认值，显示当前连接中有效的系统变量值
+   
+   没有条件时，显示的是当前连接中系统所有有效的变量
+   ```
+
+   查看变量名以"auto_inc"
+
+   ```sql
+   show variables like 'auto_inc%';
+   ```
+
+   ![image-20231126215254511](assets/image-20231126215254511.png)
+   select 查看指定名称的当前系统变量值
+
+   ```sql
+   select @@auto_increment_increment ,@@auto_increment_offset;
+   ```
+
+   ![image-20231126215731634](assets/image-20231126215731634.png)
+
+   *带@@的变量，mysql会将其判断为系统变量。*
+
+
+
+2. 修改系统变量的值
+
+   - 局部修改
+
+     *修改的系统变量只需在本次连接中生效，并不影响其他连接mysql服务器的客户端*
+
+     ```sql
+     set 变量名=新值;
+     ```
+
+     ```sql
+     客户端1
+     set auto_increment_offset=5;
+     show variables like 'auto_increment_offset';
+     
+     
+     
+     客户端2查看auto_increment_offset;
+     show variables like 'auto_increment_offset';
+     ```
+
+     ![image-20231126221223696](assets/image-20231126221223696.png)
+
+     
+
+   - 全局修改
+     *对所有正在连接的客户端无效，它只对新连接的客户端生效*
+
+     ```sql
+     set global 变量名=值;
+     
+     set @@global.变量名=值;
+     ```
+
+     ```sql
+     在客户端1中全局修改auto_increment_offset的值
+     set global auto_increment_offset=5;
+     
+     客户端1查看auto_increment_offset的值
+     select @@auto_increment_offset;
+     
+     客户端2查看auto_increment_offset的值
+     select @@auto_increment_offset;
+     ```
+     
+     ![image-20231127095342559](assets/image-20231127095342559.png)
+
+
+
+#### 9.3.2 会话变量
+
+*会话变量*： 也可以称为用户变量，指的是用户自定义的变量，根当前客户端是绑定，仅对当前用户使用的客户端生效。
+
+会话变量赋值的方式
+```sql
+定义会话变量时必须为其赋值
+
+1. set @name='Tom';
+
+2.select @price:=price from sh_goods where id=1;
+
+3.select id,name,price from sh_goods limit 1 
+into @ids, @names,@prices;
+```
+
+![image-20231127100546772](assets/image-20231127100546772.png)
+
+
+mysql变量只能保存一个数据，要保存一组数据时，可以转化为json数据类型保存一组数据
+```sql
+select json_array(id,name),json_object(id,name)
+from sh_goods limit 1
+into @arrinfo,@objinfo;
+
+select @arrinfo,@objinfo;
+```
+
+![image-20231127101111249](assets/image-20231127101111249.png)
+
+
+
+
+#### 9.3.3 局部变量
+
+作用范围在begin 和 end语句之间
+局部变量的定义
+
+```sql
+declare 变量名1 [,变量名2]... 数据类型 [default 默认值]
+
+同时定义多个局部变量时，只能共用同一种数据类型
+default 设置默认值，省略时初始值为null
+```
+
+```sql
+delimiter $$
+
+create function func() returns int
+ begin 
+ 	declare age int default 10;
+ 	return age;
+ end
+ $$
+ 
+ delimiter ;
+ 
+ select age;
+ select func();
+```
+
+![image-20231127102229998](assets/image-20231127102229998.png)
+
+
+
+
+### 9.4 流程控制
+
+#### 9.4.1 判断语句
+
+1. if 语句
+
+   - sql语句的if语法
+
+     ```sql
+     if (条件表达式,表达式1,表达式2)
+     
+     条件表达式为true时，返回表达式1的值，否则返回表达式2的值
+     ```
+
+     ```sql
+     select id,name from sh_goods where if(score=5,score,0);
+     
+     where 条件为真，获取对应信息
+     ```
+
+     ![image-20231127104629551](assets/image-20231127104629551.png)
+     
+   - sql程序的if语法
+     ```sql
+     if 条件表达式1 then 语句列表
+     [elseif 条件表达式2 then 语句列表] ... [else 语句列表]
+     end if
+     
+     每个语句列表必须由一个或多个sql语句组成，且不允许为空
+     ```
+   
+     ```sql
+     delimiter $$
+     
+     create procedure isnull(in val int)
+     	begin 
+     		if val is NUll
+     			then select 'the param is null';
+     		else 
+     			select 'the param is not null';
+     		end if ;
+     	end
+     	$$
+     	
+     delimiter ;
+     ```
+   
+     ![image-20231127105801923](assets/image-20231127105801923.png)
+     
+   
+2. case 语句
+
+   - 适用于sql语句的case语法
+
+     ```sql
+     语法1
+     case 条件表达式 when 表达式1 then 结果1
+     [when 表达式2 then 结果2]...[else 结果] 
+     end
+     
+     
+     语法2
+     case when 条件表达式1 then 结果1
+     [when 条件表达式2 then 结果2]... [else 结果] 
+     end
+     ```
+
+     ```sql
+     select id,name,
+     (case when price<50 then '小额商品'
+     when price<100 then '低价商品'
+     when price<200 then '平价商品'
+     else '大额商品' end) as desc_price
+     from sh_goods;
+     ```
+
+     ![image-20231127122318968](assets/image-20231127122318968.png)
+     
+   - 适用于sql程序的case语法
+     ```sql
+     语法1
+     case 条件表达式 when 表达式1 then 语句列表
+     [when 表达式2 then 语句列表]...[else 语句列表] 
+     end case
+     
+     
+     语法2
+     case when 条件表达式1 then 语句列表
+     [when 条件表达式2 then 语句列表]... [else 语句列表] 
+     end case
+     
+     
+     语句列表必须由一个或多个sql语句组成，不可以为空，后结果只能是一个表达式，不可以是sql语句。
+     ```
+   
+     ```sql
+     delimiter $$
+     
+     create procedure pro_level(in score decimal(5,2))
+     	begin
+     		case
+     		when score>89 then select ('优秀')as level;
+     		when score>79 then select ('良好')as level;
+     		when score>69 then select ('中等')as level;
+     		when score>59 then select ('及格')as level;
+     		else select ('不及格')as level;
+     		end case;
+     	end
+     	$$
+     	
+     delimiter ;
+     ```
+   
+     ![image-20231127125005345](assets/image-20231127125005345.png)
+     
+
+#### 9.4.2 循环语句
+
+1. loop
+   ```sql
+   [标签:]loop
+   	语句列表
+   end loop [标签];
+   ```
+
+   计算1-9之间数子的和
+
+   ```sql
+   delimiter $$
+   
+   create procedure pro_sum()
+   	begin 
+   		declare i,sum int default 0;
+   		sign:loop
+   			if i>=10 then
+   				select i,sum;
+   				leave sign;
+   			else
+   				set sum=sum+i;
+   				set i=i+1;
+   			end if;
+   		end loop sign;
+   	end
+   	$$
+   	
+   delimiter ;
+   ```
+
+   ![image-20231127130736818](assets/image-20231127130736818.png)
+   
+2. repeat语句
+   ```sql
+   [标签:] repeat
+   	语句列表
+   until 条件表达式 end repeat [标签]
+   
+   程序会无条件的执行一次语句列表，然后在进行判断
+   ```
+
+   计算10以内的奇数和
+   ```sql
+   delimiter $$
+   
+   create procedure pro_odd()
+   	begin
+   		declare i,sum int default 0;
+   		repeat
+   			if i%2!=0 then
+   				set sum=sum+i;
+   			end if;
+   			set i=i+1;
+   		until i>=10 end repeat;
+   		select i,sum;
+   	end
+   	$$
+   	
+   delimiter ;
+   ```
+
+   ![image-20231127132408324](assets/image-20231127132408324.png)
+   
+3. while 语句
+   ```sql
+   [标签:] while 条件表达式 do
+   	语句列表
+   end while [标签]
+   ```
+
+   计算1-10内的偶数和
+   ```sql
+   DELIMITER $$
+   CREATE PROCEDURE sum_even()
+   BEGIN
+       DECLARE i INT DEFAULT 0;
+       DECLARE sum INT DEFAULT 0;
+       
+       WHILE i < 10 DO
+           IF i % 2 = 0 THEN
+               SET sum = sum + i;
+           END IF;
+           SET i = i + 1;
+       END WHILE;
+       SELECT i, sum;
+   END $$
+   
+   DELIMITER ;
+   ```
+
+   ![image-20231127135819420](assets/image-20231127135819420.png)
+   
+
+#### 9.4.3 跳转语句
+
+```sql
+{iterate | leave} 标签;
+
+iterate 用于结束本次循环，开始下一次循环
+leave：终止当前循环
+```
+
+```sql
+delimiter $$
+create procedure pro_jump()
+	begin
+		declare num int default 0;
+		my_loop:loop
+			set num=num+2;
+			if num<5 then
+				iterate my_loop;
+			else
+				select num;
+				leave my_loop;
+			end if;
+		end loop my_loop;
+	end
+	$$
+	
+delimiter ;
+```
+
+![image-20231127140746969](assets/image-20231127140746969.png)
+
+
+
+
+### 9.5 游标
+
+*select 语句仅能返回指定条件的结果集，但没有办法对结果集进行下一行的检索或一条记录的单独处理，而游标机制可以解决这个问题*
+
+#### 9.5.1 游标的操作流程
+
+1. 定义游标
+   ```sql
+   declare 游标名称 cursor for select 语句;
+   
+   游标定义时必须在错误处理程序的语句之前，局部声明变量之后。
+   
+   与指定的select语句相关联，确定游标要操作的select结果对象集
+   游标名称必须唯一，因为存储过程或者函数可以存在多个游标，而游标名称是区分不同游标的唯一标识
+   
+   注意：与游标相关联的select语句并没有执行
+   ```
+
+   
+
+2. 打开游标
+   ```sql
+   open 游标名称
+   
+   打开游标，使select查询的数据存储到mysql服务器的内存中
+   ```
+
+   
+
+3. 利用游标检索数据
+   *fetch语句检索select结果集中的数据，每访问一次，fetch就获取到一行记录*
+
+   ```sql
+   fetch [[next] from] 游标名称 into 变量名 [,变量名]...
+   
+   检索所有数据，常搭配的循环repeat语句
+   ```
+
+   
+
+4. 关闭游标
+   ```sql
+   close 游标名称
+   ```
+
+   
+
+#### 9.5.2 使用游标检索数据
+
+在sh_goods 表中，将库存不足400的5星评分商品的库存增加到1500
+```sql
+delimiter $$
+create procedure sh_goods_pro_cursor()
+	begin
+		declare mark, cur_id, cur_num int default 0;
+		
+		-- 定义游标
+		declare cur cursor for 
+		select id, stock from sh_goods where score = 5;
+		
+		-- 自动错误处理，结束游标遍历
+		declare continue handler for sqlstate '02000' set mark = 1;
+		
+		-- 打开游标
+		open cur;
+		
+		repeat
+			fetch cur into cur_id, cur_num;
+			if cur_num < 400 then 
+				set cur_num = 1500;
+				update sh_goods set stock = cur_num where id = cur_id;
+			end if;
+		until mark end repeat;
+		
+		-- 关闭游标
+		close cur;	
+	end
+	$$
+	
+delimiter ;
+```
+
+![image-20231127150423187](assets/image-20231127150423187.png)
+
+
+### 9.6 触发器
+
+*可以看作一种特殊类型的存储过程，它与存储过程的区别是，存储过程需要时调用，而触发器是在预定事件发生时，自动调用*
+
+
+
+#### 9.6.1 触发器的基本操作
+
+1. #### 创建触发器
+
+   ```sql
+   create trigger 触发器名字 触发时机 触发事件 on 表 for each row 触发顺序
+   begin
+   	操作内容
+   end
+   ```
+
+   ​																		**创建触发器的选项**
+
+   | 选项     | 可选值                  | 描述                           |
+   | -------- | ----------------------- | ------------------------------ |
+   | 触发时机 | before                  | 数据发生改变之前               |
+   |          | after                   | 数据发生改变之后               |
+   | 触发事件 | insert                  | 插入操作                       |
+   |          | delete                  | 删除操作                       |
+   |          | update                  | 更新操作                       |
+   | 触发顺序 | follows 其他触发器名称  | 新有触发器在现有触发器之后激活 |
+   |          | precedes 其他触发器名称 | 新有触发器在现有触发器之前激活 |
+
+   创建一个购物车表
+
+   ```sql
+   create table shop_cart(
+   id int unsigned primary key auto_increment,
+   good_id int unsigned not null default 0,
+   good_num int unsigned not null default 0
+   );
+   ```
+
+   示例：用户添加商品到购物车自动减少库存
+
+   ```sql
+   delimiter $$
+   
+   #创建触发器
+   create trigger insert_tri before insert on 
+   shop_cart for each row 
+   	begin 
+   		#声明一个局部变量stocks
+   		declare stocks int default 0;
+   		#获取到购买商品的id
+   		select stock from sh_goods where id=new.good_id into stocks;
+   		#购买的商品大于等于库存时
+   		if stocks <=new.good_num then
+   			set new.good_num:=stocks;
+   			# 将库存设置为0
+   			update sh_goods set stock:=0 where id=new.good_id;
+   		#购买的商品小于库存时
+           else 
+           	update sh_goods set stock:=stock-new.good_num where id=new.good_id;
+   		end if;
+   	end
+   	$$
+   	
+   delimiter ;
+   
+   
+   
+   关键字new获取插入或更新时产生的新值，使用关键字old获取删除或更新以前的值！
+   ```
+
+   ![image-20231127173933929](assets/image-20231127173933929.png)
+
+   
+
+
+2. 查看触发器
+   ```sql
+   show triggers [{ from | in } 数据库名称] [like '匹配模式'| where 条件表达式];
+   
+   like比较特殊，用于匹配触发器的数据表，并非触发器名称
+   ```
+
+   ![image-20231128091720321](assets/image-20231128091720321.png)
+   
+
+3. 触发器的触发
+   ```sq
+   #查看sh_goods表中商品编号为5号的存储量stock
+   select id,stock from sh_goods where id=5;
+   
+   #向shop_cart表中插入数据，触发设置的触发器
+   insert shop_cart values(1,5,2000);
+   
+   查看俩表的相关数据
+   select id,stock from sh_goods where id=5;
+   
+   select * from shop_cart;
+   
+   ```
+
+   ![image-20231128093715588](assets/image-20231128093715588.png)
+   
+
+4. 删除触发器
+   ```sql
+   drop trigger [if exists] 触发器名称;
+   ```
+
+   ![image-20231128094128294](assets/image-20231128094128294.png)
+   
+
+
+
+### 9.7 事件
+
+*在某个特定的时间根据计划让其完成指定的任务或者每个一段时间执行一次指定的任务·*
+触发器和事件的区别：触发器仅针对某个表产生的事件执行特定的任务，而事件根据时间的推移触发设定的任务，且操作对象可以是多个数据表。
+
+1. 开启事件调度器
+   ```sql
+   #查看事件调度器
+   show variables like 'event_scheduler';
+   
+   #修改事件调度器
+   set @@event_scheduler=on;
+   ```
+
+   ![image-20231128095023714](assets/image-20231128095023714.png)
+   
+
+2. 创建事件
+   ```sql
+   create event [if not exists] 事件名称
+   on schedule 时间与频率
+   [on completion [not] preserve]
+   [enable|disable]
+   [commit '事件的注释']
+   do 事件执行的主体
+   
+   on schedule 定义事件开始与结束的时间，执行的频率以及持续的时间
+   on completion 定义事件过期是否立即删除 默认是not preserve 表示删除
+   commit 为事件设置注释
+   do 事件发生后执行的sql语句
+   ```
+
+   时间和频率的设置
+
+   ![image-20231128100328323](assets/image-20231128100328323.png)
+
+   1. 执行一次
+      ```sql
+      at 时间戳 [+ interval 时间间隔 时间单位]...
+      ```
+
+
+      示例
+
+      ```sql
+      create event insert_data_event
+      on schedule at current_timestamp +interval 1 minute +interval 20 second
+      do insert employee values('22','王小波',3);
+      
+      #1分20秒后自动执行do后面的语句
+      ```
+
+      ![image-20231128102012831](assets/image-20231128102012831.png)
+      
+
+   2.  定期重复操作
+      ```sql
+      every 时间间隔 时间单位
+      [starts 时间戳 [interval 时间间隔 时间单位]...]
+      [ends 时间戳 [interval 时间间隔 时间单位]...]
+      ```
+
+      
+
+      示例
+
+      ```sql
+      #定义函数
+      delimiter $$
+      create function say_hello_func(name varchar(20)) returns varchar(50)
+      begin 
+      	return concat('hello,',name);
+      end
+      $$
+      delimiter ;
+      
+      
+      #定义一个存储过程
+      delimiter $$
+      create procedure say_hello_pro()
+      begin
+      	declare name varchar(20) ;
+      	set name='刘栋';
+      	select say_hello_func(name);
+      end
+      $$
+      delimiter ;
+      
+      #创建事件
+      create event if not exists say_hello_event
+      on schedule every 20 second
+      starts current_timestamp
+      ends current_timestamp +interval 2 minute
+      on completion preserve
+      enable
+      do call say_hello_pro();
+      ```
 
 
 
 
 
+3. 查看事件
+
+   ```sql
+   show events\G;
+   ```
+
+   ![image-20231128125435029](assets/image-20231128125435029.png)
+   
+
+4. 修改事件
+   ```sql
+   alter event [if not exists] 事件名称
+   on schedule 时间与频率
+   [on completion [not] preserve]
+   [rename to 新事件名称]
+   [enable|disable]
+   [commit '事件的注释']
+   do 事件执行的主体
+   ```
+
+   ```sql
+   alter event say_hello_event
+   rename to s_h_e;
+   ```
+
+   ![image-20231128125956809](assets/image-20231128125956809.png)
+   
+
+5. 删除事件
+
+   ```sql
+   drop event if exists s_h_e;
+   ```
+
+   ![image-20231128130107745](assets/image-20231128130107745.png)
+   
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+## 10. 数据库优化
