@@ -1091,11 +1091,12 @@ INSERT INTO employee (id, name, department_id) VALUES
    ![image-20231120110223025](assets/image-20231120110223025.png)
    
 
+   
    ```sql
    show create table employee;
    创建外键约束，会自动为没有索引的外键关联字段创建索引
    ```
-
+   
    -![image-20231120130338127](assets/image-20231120130338127.png)
 
 
@@ -1111,6 +1112,7 @@ INSERT INTO employee (id, name, department_id) VALUES
    ```
 
    ![image-20231120132034364](assets/image-20231120132034364.png)
+   
 
 
 
@@ -2879,7 +2881,7 @@ delimiter ;
 
 #### 9.6.1 触发器的基本操作
 
-1. #### 创建触发器
+1. 创建触发器
 
    ```sql
    create trigger 触发器名字 触发时机 触发事件 on 表 for each row 触发顺序
@@ -3127,3 +3129,79 @@ delimiter ;
 
 
 ## 10. 数据库优化
+
+### 10.1 存储引擎
+
+*存储引擎可以看作数据表存储数据的一种格式，不同的格式具有的特性也不相同*
+
+```sql
+#查看存储引擎
+show engines;
+```
+
+![image-20231128202155628](assets/image-20231128202155628.png)
+
+
+默认的存储引擎是innoDB。它是具有高可靠性和高性能的通用存储引擎，具有提交、回滚和崩溃恢复的事务处理能力、提高多用户并发处理的能力以及维护数据完整性等优势。
+
+
+
+### 10.2 索引
+
+*为了快速在大量数据中找到指定的数据，可以使用索引功能，让用户在执行查询操作时可以根据字段中建立的索引，快速找到数据*
+
+#### 10.2.1 索引概述
+
+*索引是一种特殊的数据结构，将数据表中的某个字段与记录的位置建立一个对应关系，并按照一定的顺序排序好，目的就是为了快速定位到指定数据位置*
+
+索引种类
+
+1. 普通索引：使用 *key* 和 *index* 定义
+2. 唯一索引：使用 *unique index*定义，创建唯一性索引需要添加唯一约束，防止用户添加重复的值
+3. 主键索引：使用 *primary key* 定义的一种特殊的唯一性索引，用于根据主键自身唯一性标识每条记录
+4. 全文索引：使用 *fulltext key* 定义，用于根据查询字符串提高数据量较大的字段的查询速度
+5. 外键索引：使用 *foreign key* 定义，用于加速外键关联的查询和维护数据完整性。外键是指在一个表中引用另一个表的主键或唯一键
+
+
+
+#### 10.2.2 索引的基本操作
+
+1. 创建索引
+   ```sql
+   方式1 创建数据表时添加索引
+   create table 数据表名(
+   	字段名 数据类型 [约束条件]
+       ...
+       
+       primary key [索引类型] (字段列表),
+       {index|key} [索引名称] [索引类型] (字段列表),
+       unique [index|key] [索引名称] [索引类型] (字段列表),
+       fulltext {index|key} [索引名称] [索引类型] (字段列表),
+   	foreign key [索引名称] [索引类型] (字段列表)
+   		references 主表 (主键或者唯一键)
+   		[on delete  { restrict | cascade | set null | no action | set default}]
+   		[on update  { restrict | cascade | set null | no action | set default}]
+   )
+   
+   方式二：向已经创建的数据表添加索引
+   alter table 数据表名
+   	add  primary key [索引类型] (字段列表),
+       add  {index|key} [索引名称] [索引类型] (字段列表),
+       add  unique [index|key] [索引名称] [索引类型] (字段列表),
+       add  fulltext {index|key} [索引名称] [索引类型] (字段列表),
+   	add  foreign key [索引名称] [索引类型] (字段列表)
+   		references 主表 (主键或者唯一键)
+   		[on delete  { restrict | cascade | set null | no action | set default}]
+   		[on update  { restrict | cascade | set null | no action | set default}]
+   		
+   		
+   1.确定采用哪种方式建立索引
+   2.创建哪些索引
+   3.为索引设置选项
+   主键索引不能设置索引名称，其他索引的名称也可以省略，默认使用建立索引的字段表示，复合索引则使用第一个字段作为索引名
+   ```
+
+   
+
+
+
