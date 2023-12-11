@@ -1550,12 +1550,13 @@ class UserInfoForm(forms.Form):
 
 - 表单数据的检验
 
-  | 表单的属性或方法 | 说明                     |
-  | ---------------- | ------------------------ |
-  | is_valid()       | 验证表单中的数据是否合法 |
-  | cleaned_data     | 获取表单中已验证的数据   |
-  | errors           | 表单验证错误的信息       |
-
+  | 表单的属性或方法 | 说明                                |
+  | ---------------- | ----------------------------------- |
+  | is_valid()       | 验证表单中的数据是否合法            |
+  | cleaned_data     | 获取表单中已验证的数据              |
+  | errors           | 表单验证错误的信息                  |
+  | data             | 获取所有数据以queryset 字典形式展现 |
+  
   校验数据
   app05/forms.py
   
@@ -1670,9 +1671,10 @@ class UserInfoForm(forms.Form):
   
   自定义验证规则的函数
   ```python
-  def mobile_validate(self):
-      mobile_re = re.compile(r'^(13[0-9]|15[012356789]|17[678]|18[0-9]|14[57])[0-9]{8}$')
-      if not mobile_re.match(mobile):
+  def mobile_validate(value):
+      mobile_re = re.compile(
+          r'^(13[0-9]|15[012356789]|17[678]|18[0-9]|14[57])[0-9]{8}$')
+      if not mobile_re.match(value):
           raise ValidationError('手机号码格式错误')
   ```
   
@@ -1801,21 +1803,257 @@ Django 提供了模型表单(ModelForm) ,可以和模型直接关联，省略了
   
   
   class UserBaseInfoModelForm(forms.ModelForm):
+      #重定义表单字段和新增一些字段
+      
+      
       class Meta:
           # 定义关联模型
           model = UserBaseInfo
-          # 定义需要再表单中展示的字段
+          # 定义需要再表单中展示的字段，和表单字段的顺序
           fields = ['username', 'password', 'age']
           # 展示全部字段
           #fields = '__all__'
   ```
+  
+  | 模型表单属性  | 说明                                                         |
+  | ------------- | ------------------------------------------------------------ |
+  | model         | 绑定已有的模型                                               |
+  | fields        | 设置模型中显示的字段，设置为__all__表示全部字段              |
+  | exclude       | 禁止转化为表单字段的模型字段                                 |
+  | labels        | 设置表单的label项，以字典形式展示，字典的键为模型的字段      |
+  | widget        | 设置表单字段的渲染效果，以字典形式展示，字典的键为模型的字段 |
+  | help_text     | 设置表单字段的帮助信息                                       |
+  | error_message | 设置表单的错误信息                                           |
+  
+- 校验模型表单数据
+  app05/forms.py
+
+  ```python
+  class UserBaseInfoModelForm(forms.ModelForm):
+      confirm_password = forms.CharField(
+          label='确认密码', widget=forms.PasswordInput(render_value=True),
+          error_messages={
+              'required': '密码不能为空',
+          })
+  
+      class Meta:
+          # 定义关联模型
+          model = UserBaseInfo
+          # 定义需要在表单中展示的字段。
+          fields = ['username', 'password',
+                    'confirm_password', 'age', 'mobile', 'status']
+          # 如果要显示全部字段，可以如下设置
+          # fields="__all__"
+          # 如果Models中定义了名称，这里不用再定义
+          labels = {
+              "age": "最佳年龄",
+              "mobile": "手机信息",
+          }
+          widgets = {
+              # 文本框渲染为密码输入框
+              "password": forms.widgets.PasswordInput(attrs={"class": "password"}, render_value=True)
+          }
+          error_messages = {
+              "username": {
+                  'required': '用户姓名不能为空',
+                  'min_length': '长度最少6位',
+                  'invalid': '输入正确的用户姓名'
+              },
+              "password": {
+                  'max_length': '密码最长10位',
+                  'required': '密码不能为空',
+                  'min_length': '密码最少6位'
+              },
+              "age": {
+                  'required': '年龄不能为空',
+              },
+              "mobile": {
+                  'required': '手机号码不能为空',
+              },
+              "status": {
+                  'required': '用户状态不能为空',
+              }
+          }
+  ```
+
+  自定义校验函数：
+
+  ```python
+  	1. 对某个字段进行精确校验，校验函数的语法格式：clean_字段名()
+      2. 重写clean()函数实现校验
+      
+      
+      # 校验手机号码的局部钩子函数
+      def clean_mobile(self):
+          mobile = self.cleaned_data.get('mobile')
+          print(mobile)
+          mobile_re = re.compile(r'^(13[0-9]|15[012356789]|17[678]|18[0-9]|14[57])[0-9]{8}$')
+          if not mobile_re.match(mobile):
+              raise ValidationError('手机号码格式错误')
+          return mobile
+  
+      # 全局钩子函数
+      def clean(self):
+          password =  self.cleaned_data.get("password")
+          confirm_password = self.cleaned_data.get("confirm_password")
+          if password != confirm_password:
+              raise forms.ValidationError("二次密码输入不一致")
+  
+  ```
+
+- 处理模型表单数据
+  接受post请求提交的数据，保存到数据库中
+
+  ```python
+  f=UseInfoBaseModelForm(request.POST)
+  new_userinfo=f.save()
+  ```
+
+  调用表单类生成实例，完成数据显示
+  ```python
+  a=UserInfoBaseModel.objects.get(id=1)  #获取数据表的一条数据
+  f=UserInfoBaseModelForm(instance=a)	#生成表单实例
+  ```
+
+  利用模型表单实例完成数据修改
+  ```python
+  a=UserInfoBaseModel.objects.get(id=1)  #获取数据表的一条数据
+  f=UserInfoBaseModelForm(request.POST,instance=a)
+  f.save()	#完成数据的修改
+  ```
 
   
 
+### 4. 使用Ajax提交表单
+
+#### 4.1 基于jquery实现ajax
+
+ajax特点：局部刷新，异步加载
+
+```html
+{% load static %}
+<script src={% static 'plugins/jquery/jquery.min.js' %}></script>
+<button id="submit">提交</button>
+<script>
+    $('#submit').click(function () {
+        $.ajax({
+            url: '/ajax_login/', //请求地址
+            type: 'POST',   //请求方式
+            data:{  //请求数据
+                'username':'admin',
+                'password':123
+            },
+            success: function (data){   //请求成功
+                console.log(data);
+            } ,
+            error: function (){ //请求失败
+                console.log('Error')
+            }
+        })
+    })
+</script>
+```
+
+#### 4.2 在ajax请求中设置令牌
+
+*{% csrf_token %}*渲染的结果
+![image-20231207132646517](assets/image-20231207132646517.png)
+
+1. 在前段模板中解决
+
+   - 直接获取名称为csrfmiddlewaretoken 的标签的值
+     ```html
+     {% csrf_token %}
+     
+     data: {
+                     csrfmiddlewaretoken: $('[name=csrfmiddleware]').val(),
+                 }
+     ```
+
+   - 直接使用模版变量{{csrf_token}}的值，并赋值给csrfmiddletoken参数
+
+     ```html
+     {% csrf_token %}
+     
+     data: {
+                     csrfmiddlewaretoken: {{csrf_token}},
+                 }
+     ```
+
+2. 在后台去掉csrf校验
+
+   ```python
+   from django.views.decorators.csrf import csrf_exempt
+   
+   @csrf_exxmpt 
+   def ...
+   ```
+
+   
+
+#### 4.4 使用ajax实现用户登录
+
+5/ajax_login.html
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<label>用户名：<input type="text" id="username"></input>
+</label>
+<label>密码：<input type="password" id="password"></input>
+</label>
+{% csrf_token %}
+{% load static %}
+<script src={% static 'plugins/jquery/jquery.min.js' %}></script>
+<button id="submit">提交</button>
+<script>
+
+    $('#submit').click(function () {
+        $.ajax({
+            url: 'http://127.0.0.1:8000/app05/ajax_login_data/',
+            type: 'POST',
+            data: {
+                username:$('#username').val(),
+                password:$('#password').val(),
+                csrfmiddlewaretoken: $("[name='csrfmiddlewaretoken']").val(),
+            },
+            success: function (data){
+                alert(data["msg"])
+            },
+            error: function (xhr, Status, error){
+                alert('error')
+            }
+        })
+    })
+</script>
+
+</body>
+</html>
+```
+
+app05/views.py
+```python
+def ajax_login(request):
+    if request.method == 'GET':
+        return render(request, '5/ajax_login.html')
 
 
+def ajax_login_data(request):
+    username = request.POST.get('username')
+    password = request.POST.get('password')
+    if username == 'admin' and password == '123':
+        return JsonResponse({'code': 1, 'msg': '登录成功！'})
+    else:
+        return JsonResponse({'code': 0, 'msg': '登录失败！'})
+```
 
-
+运行结果
+![image-20231207210140056](assets/image-20231207210140056.png)
 
 
 ## 7. 后台项目实战
