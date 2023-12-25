@@ -59,7 +59,6 @@ def phone(request, phone_num):
 ![image-20231103170109630](assets/image-20231103170109630.png)
 
 
-
 ### 1.2正则表达式匹配url
 
 **命名正则表达式**
@@ -132,6 +131,7 @@ def home(request,id):
 
 
 
+
 ### 1.5 url命名与命名空间
 
 **反向解析**
@@ -153,7 +153,8 @@ def home(request):
 
 
 
-**应用命名空间**
+
+**命名空间**
 
 多个应用可能包含同名url，反向解析时会出现混乱
 
@@ -187,6 +188,7 @@ def home(request):
 
 
 
+
 避免反向解析产生混乱，使用命名空间区分不同应用
 
 ```python
@@ -199,7 +201,8 @@ app_name="app02"
 
 
 
-**实例命名空间**
+
+**路由命名**
 
 多个url实例同时对应一个应用页会出现解析混乱
 
@@ -222,7 +225,7 @@ def index(request):
 ```
 
 ![image-20231103200433829](assets/image-20231103200433829.png)
-使用实例命名空间解决问题
+使用路由命名解决问题
 
 ```python
 mysite/urls.py
@@ -233,6 +236,7 @@ urlpatterns = [
 ```
 
 ![image-20231103200911398](assets/image-20231103200911398.png)
+
 
 
 
@@ -259,10 +263,12 @@ class BookInfo(models.Model):
 
     def __str__(self):
         return self.name
-生成的表名是 app01_bookinfo
+    
+生成的表名是 app01_bookinfo  应用名称+模型类名称
 ```
 
 ![image-20231103204329665](assets/image-20231103204329665.png)
+
 
 
 **mysql配置**
@@ -325,7 +331,7 @@ ManyToManyField()	老师和学生
 ```python
 null		表示字段是否为空
 default		设置字段的默认值
-blank		字段是否为空白
+blank		字段是否为空字符串
 choices		字段的选项，二维列表或二维元祖
 primary_key	主键字段
 unique		字段必须唯一
@@ -464,8 +470,8 @@ BookInfo.objects.filter(id=1).update(name='武动乾坤')
 
 ```python
 正向和方向查询：与关联字段所在位置有关
-若关联字段在当前表中，从当前表中查询关联表称为正向查询
-若关联字段不在当前表中，从当前表中查询关联表称为反向查询
+	若关联字段在当前表中，从当前表中查询关联表称为正向查询
+	若关联字段不在当前表中，从当前表中查询关联表称为反向查询
 
 正向查询靠属性，反向查询靠表名小写
 ```
@@ -533,7 +539,9 @@ BookInfo.objects.filter(id=1).update(name='武动乾坤')
 
 **过滤器**	对数据进行加工
 
-	- 语法格式{{variables|filters:'arg'}}  也可以使用管道符连接多个过滤器{{variabls|filters1|filters2}}
+	- 语法格式
+		{{variables|filters:'arg'}}  也可以使用管道符连接多个过滤器{{variabls|filters1|filters2}}
+	注意：不能有空格
 
 | 常用内置过滤器 | 说明                     |
 | -------------- | ------------------------ |
@@ -573,7 +581,7 @@ BookInfo.objects.filter(id=1).update(name='武动乾坤')
    {% endfor %}
    ```
 
-3.  if/elif/else
+3. if/elif/else
    ```python
    {% if data > 10 %}
        大于10
@@ -632,6 +640,17 @@ BookInfo.objects.filter(id=1).update(name='武动乾坤')
     *标记当前模板继承的模板*
 
 11. with 为复杂变量名设置别名
+
+12. forloop 循环变量
+
+    | 变量               | 说明                         |
+    | ------------------ | ---------------------------- |
+    | forloop.counter    | 从1开始循环                  |
+    | forloop.counter0   | 从0开始循环                  |
+    | forloop.reverse    | 反向循环0开始                |
+    | forloop.first      | 若为第一次循环，返回True     |
+    | forloop.last       | 若为最后一次次循环，返回True |
+    | forloop.parentloop | 外层循环次数                 |
 
     
 
@@ -713,6 +732,7 @@ base.html
 ![image-20231106211237975](assets/image-20231106211237975.png)
 
 
+
 ```python
 {#继承base.html模板#}
 {% extends 'base.html' %}
@@ -733,6 +753,7 @@ base.html
 ![image-20231106211400612](assets/image-20231106211400612.png)
 
 
+
 ## 4. 视图
 
 *载入模版->填充上下文->生成响应消息->返回响应对象*
@@ -743,13 +764,14 @@ base.html
 
    | **request.body**    | **请求体信息，该属性为bytes类型**                            |
    | ------------------- | ------------------------------------------------------------ |
-   | **request.path**    | **请求页面的完整路径(不包含域名)**                           |
+   | **request.path**    | **请求页面的完整路径**                                       |
    | **request.method**  | **本次请求的请求方法**                                       |
    | **request.GET**     | **包含GET请求的所以参数，是QueryDict对象，有get()方法提取**  |
    | **request.POST**    | **包含POST请求的所以参数，是QueryDict对象，有get()方法提取** |
    | **request.COOKIES** | **包含所有cookie信息，是一个字典数据**                       |
    | **request.session** | **包含当前会话信息，该属性是QueryDict对象**                  |
    | **request.META**    | **请求头部信息，该属性dict类型**                             |
+   | **request.user**    | **获取登录用户的当前信息登录返回一个User对象，如果未登录返回一个匿名用户** |
 
 2. 常用方法
 
@@ -764,17 +786,18 @@ base.html
 
 1. 常用属性
 
-   | **response.content**     | **设置响应消息内容，值为字节类型** |
-   | ------------------------ | ---------------------------------- |
-   | **response.charset**     | **设置响应消息的编码方式**         |
-   | **response.status_code** | **设置响应状态码**                 |
+   | **response.content**     | **设置响应消息内容**       |
+   | ------------------------ | -------------------------- |
+   | **response.charset**     | **设置响应消息的编码方式** |
+   | **response.status_code** | **设置响应状态码**         |
 
 2. 常用方法
 
-   | **response.set_cookie(key,value)** | **设置cookie** |
-   | ---------------------------------- | -------------- |
-   | **response.del_cookie(key)**       | **删除cookie** |
-
+   | **response.set_cookie(key,value)**                         | **设置cookie**                             |
+   | ---------------------------------------------------------- | ------------------------------------------ |
+   | **response.del_cookie(key)**                               | **删除cookie**                             |
+   | **response.set_signed_cookie、response.get_signed_cookie** | **对cookie数据进行加密，设置一个salt密盐** |
+   
    
 
 ### 4.3 快速生成响应的对象
@@ -790,6 +813,24 @@ base.html
 
 *一个类中定义不同的方法，处理以不同请求方式发送的请求*
 *视图类中的as_view()方法，接受请求，获取请求方法，根据请求方法找到对应的视图方法*
+
+```python
+1.函数形式定义的视图
+def my_view(request):
+    if request.method='GET':
+        return HttpResponse('GET result')
+    if request.method='POST':
+        return HttpResponse('POST result')
+    
+2.以类形式定义的视图
+	class MyView(View):
+        def get(request):
+            return HttpResponse('GET result')
+        def post(request):
+            return HttpResponse('POST result')
+```
+
+
 
 ### 4.5 案例 基于视图类的商品管理
 
@@ -954,8 +995,13 @@ class Goods(models.Model):
 2. 创建管理员用户  python manage.py createsuperuser
    ![image-20231108210245196](assets/image-20231108210245196.png)
 
-3. 设置为中文  settings.py 文件下language_code的值设置为zh-Hans
+3. 设置为中文
+   
+   -   settings.py 文件下language_code的值设置为zh-Hans
+   - 添加中间件 'django.middleware.locale.LocaleMiddleware',
+   
    ![image-20231108210438109](assets/image-20231108210438109.png)
+   
 
 
 
@@ -974,24 +1020,24 @@ class Goods(models.Model):
    ```
 
    ![image-20231108212001671](assets/image-20231108212001671.png)
-
-​		商品时模型元属性 verbose_name定义的数据表名
-
+   
 2. 设置应用名称中文显示
    ```python
-   首先在应用文件下 __init__.py 文件添加如下配置
+   app01/__init__.py 
    default_app_config = 'app01.apps.GoodsConfig'
-   然后在app01/apps.py中配置
+   
+   
+   app01/apps.py
    from django.apps import AppConfig
    class GoodsConfig(AppConfig):
-       name = 'app01'
+       ...
        verbose_name = '商品信息'
    ```
 
    ![image-20231108213129234](assets/image-20231108213129234.png)
-
    
-
+   
+   
 3. 管理数据库数据
    GoodsAdmin类下添加 list_display = ('id', 'create_time', 'update_time', 'name', 'price', 'stock', 'sales')
    <img src="assets/image-20231108214942909.png" alt="image-20231108214942909" style="zoom:150%;" />
@@ -1058,7 +1104,7 @@ class Goods(models.Model):
 
    <img src="assets/image-20231109115815789.png" alt="image-20231109115815789" style="zoom:80%;" />
 
-​		*自定义过滤器*
+​	*自定义过滤器*
 ```python
 from django.contrib import admin
 from .models import Goods
@@ -1844,7 +1890,7 @@ class LoginView(View):
     def post(self, request):
         username = request.POST.get('username')
         password = request.POST.get('password')
-        # 接受用户名和密码，验证成功返回User对象,否则None
+        # 接受用户名和密码，验证成功返回User对象,否则匿名用户
         status = authenticate(username=username, password=password)
         if status is not None:
             return HttpResponse('登录成功')
@@ -2018,7 +2064,7 @@ class UserView(View):
         username= request.POST.get('username')
         password= request.POST.get('password')
         user= authenticate(request,username=username,password=password)
-        if user is not None:
+        if user:
             # 将用户信息存入到Session会话中，第一个接受请求对象request，第二个是User对象
             login(request,user)
             return render(request,'index.html',{'username':username})
@@ -2039,8 +2085,12 @@ class UserView(View):
 2. 装饰器@login_required()
 
    ```python
-   @login_required(login_url='/login/', redirect_field_name='my_redirect')
-   # login_url 重定向地址   redirect_field_name 重定向字段名称
+   @login_required(login_url='/login/')
+   # login_url 重定向地址  
+   
+   
+   settings.py 设置重定向地址
+   	LOGIN_URL='/login/'
    ```
 
    login_url会优先在装饰器设置的重定向地址，没有的话在settings.py 中查找 LOGIN_URL
@@ -2058,7 +2108,7 @@ class UserView(View):
 
 ### 7.4 模版和身份验证
 
-*当前用户实例和其权限会被保存在模板变量的user和perm中，在模板中可使用这俩个变量验证用户和用户权限*
+*当前**用户实例和其权限会被保存在模板变量的user和perm**中，在模板中可使用这俩个变量验证用户和用户权限*
 
 1. 验证用户
 
@@ -2101,8 +2151,8 @@ class User(AbstractUser):
         verbose_name_plural = verbose_name
     
 setting.py
-指向自定义用户模型类
-AUTH_USER_MODEL="应用名.模型名"
+	指向自定义用户模型类
+	AUTH_USER_MODEL="应用名.模型名"
 ```
 
 ### 7.6 状态保持
@@ -2137,6 +2187,7 @@ AUTH_USER_MODEL="应用名.模型名"
 
    ![image-20231113153933381](assets/image-20231113153933381.png)
    
+   
 3. 删除cookie
 
    ```python
@@ -2170,6 +2221,7 @@ AUTH_USER_MODEL="应用名.模型名"
    settings.py
 
    ```python
+   # 存储在本机内存
    CACHES = {
        'default': {
            'BACKEND': 'django_redis.cache.RedisCache',
@@ -2179,12 +2231,13 @@ AUTH_USER_MODEL="应用名.模型名"
            }
        }
    }
+   
    SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
    SESSION_CACHE_ALIAS = 'default'
    ```
 
    views.py
-
+   
    ```python
    from django.http import HttpResponse
    # Create your views here.
@@ -2193,11 +2246,12 @@ AUTH_USER_MODEL="应用名.模型名"
    
        return HttpResponse('session写入成功！')
    ```
-
+   
    ![image-20231113204655882](assets/image-20231113204655882.png)
    
-
+   
    ![image-20231113204912246](assets/image-20231113204912246.png)
+   
    
 3. 读取session数据
 
@@ -2227,6 +2281,8 @@ AUTH_USER_MODEL="应用名.模型名"
 
 
 
+
+## 8. 小鱼商城项目
 
 
 
