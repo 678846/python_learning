@@ -2187,7 +2187,6 @@ setting.py
 
    ![image-20231113153933381](assets/image-20231113153933381.png)
    
-   
 3. 删除cookie
 
    ```python
@@ -2252,7 +2251,6 @@ setting.py
    
    ![image-20231113204912246](assets/image-20231113204912246.png)
    
-   
 3. 读取session数据
 
    ```python
@@ -2284,13 +2282,376 @@ setting.py
 
 ## 8. 小鱼商城项目
 
+**基于DJango+vue开发，采用前后端不分离的开发模式，后端模板引擎使用Jinja2。若整体刷新使用Jinja2进行渲染并返回页面，局部刷新则使用Ajax请求**
 
 
 
+### 8.1 项目前期创建和准备
+
+#### 8.1.1 创建项目
+
+- 虚拟环境 
+- 创建项目
 
 
 
+#### 8.1.2 配置开发环境
+
+- 项目环境分为开发环境和生产环境
+  1. 开发环境：编写和调试项目代码的环境
+  2. 生产环境：部署上线运行的环境
+
+- 新建配置文件
+  准备开发和生产配置文件
+  ![image-20231225132838841](assets/image-20231225132838841.png)
+
+- 指定开发环境配置文件
+  manage.py
+
+  ```python
+  # 指定开发环境的配置文件
+  	os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'xiaoyu.settings.dev')
+  ```
+
+  
+
+#### 8.1.3 配置Jinja2模板
+
+- 安装Jinja2 	pip install Jinja2
+
+- 配置Jinja2模板引擎
+  utils/jinja2_env.py
+
+  ```python
+  from django.contrib.staticfiles.storage import staticfiles_storage
+  from django.urls import reverse
+  from jinja2 import Environment
+  
+  
+  def jinja2_environment(**options):
+      env = Environment(**options)
+      env.globals.update({
+          'static': staticfiles_storage.url,
+          'url': reverse,
+      })
+      return env
+  ```
+
+  dev.py
+
+  ```python
+  # 修改BASE_DIR
+  BASE_DIR = Path(__file__).resolve().parent.parent.parent
+  
+  TEMPLATES = [
+      {
+          'BACKEND': 'django.template.backends.django.DjangoTemplates',
+          'DIRS': [],
+          'APP_DIRS': True,
+          'OPTIONS': {
+              'context_processors': [
+                  'django.template.context_processors.debug',
+                  'django.template.context_processors.request',
+                  'django.contrib.auth.context_processors.auth',
+                  'django.contrib.messages.context_processors.messages',
+              ],
+          },
+      },
+      {
+          'BACKEND': 'django.template.backends.jinja2.Jinja2',
+          'DIRS': [os.path.join(BASE_DIR, 'templates')],
+          'APP_DIRS': True,
+          'OPTIONS': {
+              'context_processors': [
+                  'django.template.context_processors.debug',
+                  'django.template.context_processors.request',
+                  'django.contrib.auth.context_processors.auth',
+                  'django.contrib.messages.context_processors.messages',
+              ],
+              'environment': 'xiaoyu.utils.jinja2_env.jinja2_environment',
+          },
+      },
+  ]
+  ```
+
+  
+
+#### 8.1.4 配置数据库
+
+- 配置mysql数据库
+
+  ```python
+  1. 安装pymysql 	pip install pymysql
+  
+  2. xiaoyu/__init__.py
+  	import pymysql
+  	pymysql.install_as_MySQLdb()
+  
+  3. dev.py
+      DATABASES = {
+          'default': {
+              'ENGINE': 'django.db.backends.mysql',
+              'NAME': 'xiaoyu',
+              'USER': 'root',
+              'PASSWORD': '678846',
+              'HOST': 'localhost',
+              'PORT': 3306
+          }
+      }
+  ```
+
+- 配置redis数据库
+
+  ```python
+  1. 安装django-redis
+  
+  2. dev.py
+      CACHES = {
+          'default': {
+              'BACKEND': 'django_redis.cache.RedisCache',
+              'LOCATION': 'redis://127.0.0.1:6379/0',
+              'OPTIONS': {
+                  'client_class': 'django_redis.client.DefaultClient'
+              }
+          },
+          'session': {
+              'BACKEND': 'django_redis.cache.RedisCache',
+              'LOCATION': 'redis://127.0.0.1:6379/1',
+              'OPTIONS': {
+                  'client_class': 'django_redis.client.DefaultClient'
+              }
+          },
+      }
+      # 指定redis存储Session数据
+      SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+  
+      # 指定使用名为session的redis配置项存储session数据
+      SESSION_CACHE_ALIAS = 'session'
+  ```
 
 
 
+#### 8.1.5 配置项目日志
 
+- 创建log目录/xiaoyu.log
+
+- 配置工程日志
+  dev.py
+
+  ```python
+  LOGGING = {
+      'version': 1,
+      'disable_existing_loggers': False,  # 是否禁用已存在的日志器
+      'formatters': {  # 日志信息的显示方式
+          'verbose': {
+              'format': '%(levelname)s %(asctime)s %(module)s %(lineno)d %(message)s',
+          },
+          'simple': {
+              'format': '%(levelname)s %(asctime)s %(module)s %(lineno)d %(message)s',
+          },
+      },
+      'filters': {  # 对日志进行过滤
+          'require_debug_true': {  # django在debug模式下才输出日志
+              '()': 'django.utils.log.RequireDebugTrue',
+          },
+      },
+      'handlers': {  # 日志处理方法
+          'console': {  # 向终端输出日志
+              'level': 'INFO',
+              'filters': ['require_debug_true'],
+              'class': 'logging.StreamHandler',
+              'formatter': 'simple',
+          },
+          'file': {  # 向文件输出日志
+              'level': 'INFO',
+              'class': 'logging.handlers.RotatingFileHandler',
+              'filename': os.path.join(os.path.dirname('./BASE_DIRS'), 'logs/xiaoyu.log'),  # 日志文件的位置
+              'maxBytes': 300 * 1024 * 1024,
+              'backupCount': 10,
+              'formatter': 'verbose',
+          },
+      },
+      'loggers': {  # 日志器
+          'django': {  # 定义名为django的日志器
+              'handlers': ['console', 'file'],  # 可以同时向终端和文件中输出日志
+              'propagate': True,  # 是否继续传输日志信息
+              'level': 'INFO',  # 日志器接受的最低日志级别
+          },
+      },
+  }
+  ```
+
+  
+
+#### 8.1.6  配置前端静态文件
+
+- 准备静态文件 
+
+- 指定静态文件路径
+  dev.py
+
+  ```python
+  # 设置静态文件的路由地址
+  STATIC_URL = '/static/'
+  # 设值静态文件路径
+  STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+  ```
+
+- 浏览器访问静态资源
+  ![image-20231225190735942](assets/image-20231225190735942.png)
+
+
+
+#### 8.1.7 配置应用目录
+
+1. 用户模块 users
+2. 验证模块 verifications
+3. 首页广告 contents
+4. 商品模块 goods
+5. 购物车模块 carts
+6. 订单模块 orders
+7. 支付模块 payment
+
+
+
+### 8.2 用户管理和验证
+
+#### 8.2.1 自定义用户模型
+
+```python
+users/models.py
+	# 继承Django内置的模型类User
+    
+	from django.contrib.auth.models import AbstractUser
+    from django.db import models
+
+
+    class User(AbstractUser):
+        """自定义用户模型类"""
+        # 手机号 ，因为 继承于 AbstractUser 的里面有了用户名 密码等等 但是对于xiaoyu_mall  需要手机号（得自己写一个）
+        mobile = models.CharField(max_length=11, unique=True, verbose_name="手机号")
+
+        # 修改模型名字
+        class Meta:
+            # 指定admin  新建的数据保存到什么表里面，  有默认的表名 ： 应用名+模型名 即 goods_goods
+            db_table = 'tb_users'  # 自己 设 一个数据表名，做好这些后进行数据库的迁移
+            verbose_name = '用户'  # 详细名称
+            verbose_name_plural = verbose_name
+
+        def __str__(self):  # 魔法方法  当我打印这个对象时 呈现出 return 的值
+            return self.username
+
+
+dev.py
+	# 指定项目的用户模型类
+	AUTH_USER_MODEL = 'users.User'
+```
+
+
+
+#### 8.2.2 用户注册
+
+- 用户注册
+  users/views.py
+
+  ```python
+  from django.contrib.auth import login
+  from django.db import DatabaseError
+  from django.http import HttpResponseForbidden
+  from django.shortcuts import render, redirect
+  from django.urls import reverse
+  from django.views import View
+  
+  from users.models import User
+  
+  
+  # Create your views here.
+  
+  class RegisterView(View):
+  
+      def get(self, request):
+          # 提供用户注册页面
+          return render(request, 'register.html')
+  
+      def post(self, request):
+          # 1.接收请求参数
+          username = request.POST.get('username')
+          password = request.POST.get('password')
+          password2 = request.POST.get('password2')
+          mobile = request.POST.get('mobile')
+          allow = request.POST.get("allow")  # 是否同意协议
+          # 判断用户是否勾选协议
+          if allow != 'on':
+              return HttpResponseForbidden("请勾选用户协议")
+  
+          # 保存注册数据：是注册业务的核心
+          # 异常，在数据库中  desc db_user  可以看到用户名、密码、手机号都是唯一的（UNI），如果出现相同的 则抛出异常
+          try:
+              # 注册成功的用户对象
+              user = User.objects.create_user(username=username, mobile=mobile, password=password, )
+          except DatabaseError:
+              return render(request, 'register.html', {'register_errmsg': '注册失败'})
+  
+          # 注册成功后，将用户的登陆信息实现状态保持， 会保存注册用户的session信息   （下面还有一个登陆的  也要保存用户的session信息）
+          login(request, user)
+  
+          # 响应登录结果:重定向到首页
+          temp_url = reverse('contents:index')  # (广告 ： index)
+          print(temp_url)
+          response = redirect(temp_url)
+          # redirect理解过来是这样用  redirect("https://www.baidu.com/")
+  
+          # 为了实现在首页右上角展示用户信息，我们需要将用户名缓存到cookie中
+          response.set_cookie('username', user.username, max_age=3600 * 24 * 14)
+          return response
+      
+  user/urls.py
+  	from django.urls import path
+  
+      from users import views
+  
+      app_name = 'users'
+  
+      urlpatterns = [
+          # 用户注册
+          path('register/', views.RegisterView.as_view(), name='register')
+  
+      ]
+  ```
+
+
+
+- 用户名和手机号唯一校验
+
+  通过Ajax向后端发起get请求，判断
+
+  ```python
+  users/views.py
+  
+  	class UsernameCountView(View):
+      """判断用户名是否重复注册"""
+  
+          def get(self, request, username):
+              # 如果为1 这说明用户已存在
+              count = User.objects.filter(username=username).count()
+              return JsonResponse({'code': RETCODE.OK, 'errmsg': 'OK', 'count': count})
+  
+  
+      class MoblieCountView(View):
+          def get(self, request, mobile):  # 参数名 mobile 不能随意修改，取决于路由中正则表达式中的名字
+              count = User.objects.filter(mobile=mobile).count()  # 过滤查询
+              return JsonResponse({'code': RETCODE.OK, 'errmsg': 'OK', "count": count})  # 返回Json为字典形式
+          
+          
+  users/urls.py
+  	re_path('usernames/(?P<username>[a-zA-Z0-9_-]{5,20})/count/', views.UsernameCountView.as_view()),
+      re_path(r'mobiles/(?P<mobile>1[3-9]\d{9})/count/', views.MoblieCountView.as_view()),
+  ```
+
+  
+
+- 验证码
+
+  图形验证码
+
+  
