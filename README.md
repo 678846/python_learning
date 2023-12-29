@@ -1,2 +1,2 @@
-#记录一下个人学习的过程
+记录一下个人学习的过程
 Python、Linux、Django、Mysql ...
