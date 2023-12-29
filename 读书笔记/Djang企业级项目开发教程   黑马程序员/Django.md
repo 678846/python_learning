@@ -2653,5 +2653,78 @@ dev.py
 - 验证码
 
   图形验证码
-
+  ```python
+  将验证码存储到redis里，将uuid作为唯一标识
+  
+  redis配置 dev.py
+  
+  	    "verify_code": {  # 保存验证码
+          "BACKEND": "django_redis.cache.RedisCache",
+          "LOCATION": "redis://127.0.0.1:6379/2",  # 选择redis2号库
+          "OPTIONS": {
+              "CLIENT_CLASS": "django_redis.client.DefaultClient",
+          }
+      }
+      
+      
+  配置文件 verifications/contants.py
+  	# 图形验证码有效期，单位：秒
+      IMAGE_CODE_REDIS_EXPIRES = 300
+      # 短信验证码有效期，单位：秒
+      SMS_CODE_REDIS_EXPIRES = 300
+      # 短信模板
+      SEND_SMS_TEMPLATE_ID = 1
+      # 60s内是否重复发送的标记
+      SEND_SMS_CODE_INTERVAL = 60
+  
+      
+  verifications/views.py
+      import logging
+  
+      from django.http import HttpResponse
+      from django.views import View
+      from django_redis import get_redis_connection
+  
+      from verifications import constants
+      from verifications.libs.captcha import captcha
+  
+      # Create your views here.
+  
+      # 日志记录器
+      logger = logging.getLogger('django')
+  
+  
+      class ImageCodeView(View):
+          def get(self, request, uuid):
+              """
+              :param uuid:通用唯一识别码，用于唯一标识该图形验证码属于哪一个用户的
+              :return:image/jpg
+              """
+              # 生成图形验证码
+              text, image = captcha.captcha.generate_captcha()
+              # 保存图形验证码
+              redis_conn = get_redis_connection('verify_code')
+              # setex 保存到redis中 并设置生存时间
+              redis_conn.setex('img_%s' % uuid, constants.IMAGE_CODE_REDIS_EXPIRES, text)
+              # 响应图形验证码
+              return HttpResponse(image, content_type='image/jpg')
+  
+          
+          
+  verifications/urls.py 设置u路由
+  	urlpatterns = [
+      	# 图形验证码
+      	path('image_codes/<uuid:uuid>/', views.ImageCodeView.as_view()),
+  	]
+  ```
+  
+  手机验证码
+  
+  1. aAjax 请求短信验证码
+  2. 先从redis提取图形验证码，然后删除redis中验证码
+  3. 比较用户输入的图形验证码和内存中的验证码
+  4. 相同生成短信验证码并存储到redis 将uuid作为key
+  
+  
+  
   

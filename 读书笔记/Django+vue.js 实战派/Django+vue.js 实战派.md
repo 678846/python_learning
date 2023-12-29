@@ -2056,5 +2056,5 @@ def ajax_login_data(request):
 ![image-20231207210140056](assets/image-20231207210140056.png)
 
 
-## 7. 后台项目实战
+## 
 
