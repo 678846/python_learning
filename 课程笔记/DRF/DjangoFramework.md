@@ -1312,7 +1312,9 @@ token的修改和过时，都会导致token失效
 ![image-20240107185339898](assets/image-20240107185339898.png)
 
 
+
 ![image-20240107185438474](assets/image-20240107185438474.png)
+
 
 
 **校验**
@@ -1342,3 +1344,41 @@ class BookView(ModelViewSet):
 ```
 
 ![image-20240107190634128](assets/image-20240107190634128.png)
+
+
+### 13.3 自定制token格式
+
+serializer.py
+```python
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    # 往荷载中加东西
+    @classmethod
+    def get_token(cls, user):  # user就是登录成功，查到的用户
+        token = super().get_token(user)  # 签发token
+        token['name'] = user.username  # 往荷载中加用户名
+        return token
+
+    def validate(self, attrs):
+        old_data = super().validate(attrs)
+        data = {'code': 100,
+                'msg': '登录成功',
+                'username': self.user.username,
+                "token": {
+                    'refresh': old_data['refresh'],
+                    'access': old_data['access']
+                    },
+                }
+        return data
+```
+
+settings.py
+```python
+SIMPLE_JWT = {
+    "TOKEN_OBTAIN_SERIALIZER": "sers.serializer.MyTokenObtainPairSerializer",
+}
+```
+
+![image-20240108133911723](assets/image-20240108133911723.png)
